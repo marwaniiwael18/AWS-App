@@ -1,0 +1,31 @@
+{
+  "name": "skillswap",
+  "version": "1.0.0",
+  "description": "A skill-sharing platform built with AWS",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run frontend:dev\" \"npm run backend:dev\"",
+    "frontend:dev": "cd frontend && npm run dev",
+    "backend:dev": "cd backend && npm run dev",
+    "build": "npm run frontend:build && npm run backend:build",
+    "frontend:build": "cd frontend && npm run build",
+    "backend:build": "cd backend && npm run build",
+    "test": "npm run frontend:test && npm run backend:test",
+    "frontend:test": "cd frontend && npm test",
+    "backend:test": "cd backend && npm test",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "amplify:init": "amplify init",
+    "amplify:push": "amplify push",
+    "amplify:publish": "amplify publish",
+    "deploy": "amplify publish"
+  },
+  "keywords": ["aws", "amplify", "react", "nodejs", "skillswap"],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "@aws-amplify/cli": "^12.8.2"
+  }
+} 
