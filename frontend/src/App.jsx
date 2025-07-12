@@ -9,6 +9,12 @@ import Dashboard from './pages/Dashboard';
 import Matches from './pages/Matches';
 import Chat from './pages/Chat';
 import Settings from './pages/Settings';
+import Features from './pages/Features';
+import Pricing from './pages/Pricing';
+import About from './pages/About';
+import Contact from './pages/Contact';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
 
 // Import components
 import Navbar from './components/Navbar';
@@ -92,6 +98,13 @@ const App = () => {
                     </ProtectedRoute>
                   } 
                 />
+                {/* Public Pages */}
+                <Route path="/features" element={<Features />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
               </Routes>
             </main>
             <Footer />

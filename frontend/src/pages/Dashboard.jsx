@@ -1,286 +1,318 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  UserIcon, 
-  SparklesIcon, 
-  ChatBubbleLeftRightIcon, 
-  PlusIcon,
-  StarIcon,
-  MapPinIcon,
-  ClockIcon
-} from '@heroicons/react/24/outline';
-import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
-import { useSkill } from '../contexts/SkillContext';
 import { useAuth } from '../contexts/AuthContext';
-import SkillTag from '../components/SkillTag';
-import MatchCard from '../components/MatchCard';
-import LoadingSpinner from '../components/LoadingSpinner';
+import { useSkill } from '../contexts/SkillContext';
 
 const Dashboard = () => {
-  const { userProfile, potentialMatches, loading, findMatches } = useSkill();
-  const { user, signOut } = useAuth();
-  const [greeting, setGreeting] = useState('');
+  const { user } = useAuth();
+  const { userProfile, matches } = useSkill();
 
-  useEffect(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) {
-      setGreeting('Good morning');
-    } else if (hour < 17) {
-      setGreeting('Good afternoon');
-    } else {
-      setGreeting('Good evening');
-    }
-  }, []);
+  // Safely get skills with fallbacks
+  const skillsOffered = userProfile?.skillsOffered || [];
+  const skillsWanted = userProfile?.skillsWanted || [];
+  
+  // Calculate active matches (accepted matches)
+  const activeMatches = matches.filter(match => match.status === 'accepted').length;
+  
+  // Calculate messages (simulate based on active matches + some variation)
+  const messageCount = activeMatches > 0 ? Math.min(activeMatches * 3 + Math.floor(Math.random() * 5), 25) : 0;
 
-  useEffect(() => {
-    if (userProfile) {
-      findMatches();
-    }
-  }, [userProfile]);
-
-  if (loading && !userProfile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
-  const stats = [
+  const dashboardStats = [
     {
-      title: 'Skills Offered',
-      value: userProfile?.skillsOffered?.length || 0,
-      icon: SparklesIcon,
-      color: 'text-primary-600',
-      bgColor: 'bg-primary-50',
+      label: 'Skills Offered',
+      value: skillsOffered.length,
+      icon: '🎯',
+      color: 'bg-gradient-primary',
+      textColor: 'text-white'
     },
     {
-      title: 'Skills Learning',
-      value: userProfile?.skillsWanted?.length || 0,
-      icon: UserIcon,
-      color: 'text-secondary-600',
-      bgColor: 'bg-secondary-50',
+      label: 'Skills Wanted',
+      value: skillsWanted.length,
+      icon: '🌟',
+      color: 'bg-gradient-secondary',
+      textColor: 'text-white'
     },
     {
-      title: 'Active Matches',
-      value: potentialMatches?.length || 0,
-      icon: ChatBubbleLeftRightIcon,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
+      label: 'Active Matches',
+      value: activeMatches,
+      icon: '🤝',
+      color: 'bg-gradient-to-br from-accent-500 to-accent-600',
+      textColor: 'text-white'
+    },
+    {
+      label: 'Messages',
+      value: messageCount,
+      icon: '💬',
+      color: 'bg-white border-2 border-neutral-200',
+      textColor: 'text-neutral-800'
+    },
+  ];
+
+  const recentActivities = [
+    {
+      id: 1,
+      type: 'match',
+      title: 'New match found!',
+      description: 'Sarah wants to learn React and can teach Spanish',
+      time: '2 hours ago',
+      icon: '🎉',
+      color: 'bg-primary-100 text-primary-800'
+    },
+    {
+      id: 2,
+      type: 'message',
+      title: 'Message from Alex',
+      description: 'Ready to start our guitar lessons?',
+      time: '5 hours ago',
+      icon: '📩',
+      color: 'bg-secondary-100 text-secondary-800'
+    },
+    {
+      id: 3,
+      type: 'skill',
+      title: 'Skill updated',
+      description: 'You added Python to your skill list',
+      time: '1 day ago',
+      icon: '✨',
+      color: 'bg-accent-100 text-accent-800'
     },
   ];
 
   const quickActions = [
     {
+      title: 'Find New Matches',
+      description: 'Discover people to exchange skills with',
+      icon: '🔍',
+      color: 'bg-gradient-primary',
+      link: '/matches'
+    },
+    {
       title: 'Update Profile',
-      description: 'Edit your skills and bio',
-      icon: UserIcon,
-      link: '/profile',
-      color: 'primary',
+      description: 'Edit your skills and preferences',
+      icon: '👤',
+      color: 'bg-gradient-secondary',
+      link: '/profile'
     },
     {
-      title: 'Find Matches',
-      description: 'Discover new skill partners',
-      icon: SparklesIcon,
-      link: '/matches',
-      color: 'secondary',
-    },
-    {
-      title: 'Start Chat',
-      description: 'Message your matches',
-      icon: ChatBubbleLeftRightIcon,
-      link: '/chat',
-      color: 'green',
+      title: 'Start Chatting',
+      description: 'Connect with your matches',
+      icon: '💬',
+      color: 'bg-gradient-to-br from-accent-500 to-accent-600',
+      link: '/chat'
     },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {greeting}, {userProfile?.name || 'there'}! 👋
-              </h1>
-              <p className="text-gray-600 mt-2">
-                Ready to learn something new or teach a skill today?
-              </p>
-            </div>
-            <button
-              onClick={signOut}
-              className="btn-secondary"
-            >
-              Sign Out
-            </button>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 pt-20">
+      <div className="container mx-auto px-4 py-8">
+        {/* Welcome Section */}
+        <div className="mb-8 animate-fade-in">
+          <h1 className="text-4xl font-bold mb-2">
+            Welcome back, <span className="text-gradient">{userProfile?.name || user?.name || user?.email || 'User'}</span>! 👋
+          </h1>
+          <p className="text-lg text-neutral-600">
+            Ready to share knowledge and learn something new today?
+          </p>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {stats.map((stat, index) => (
-            <div key={index} className="card">
-              <div className="flex items-center">
-                <div className={`p-3 rounded-lg ${stat.bgColor}`}>
-                  <stat.icon className={`h-6 w-6 ${stat.color}`} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {dashboardStats.map((stat, index) => (
+            <div
+              key={index}
+              className={`${stat.color} ${stat.textColor} rounded-2xl p-6 shadow-soft hover:shadow-medium transition-all duration-300 hover:scale-105 animate-slide-up floating-element`}
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium opacity-90">{stat.label}</p>
+                  <p className="text-3xl font-bold">{stat.value}</p>
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                </div>
+                <div className="text-3xl opacity-80">{stat.icon}</div>
               </div>
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Profile Summary */}
+        {/* Main Content Grid */}
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Quick Actions */}
           <div className="lg:col-span-2">
-            <div className="card mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900">Profile Summary</h2>
-                <Link to="/profile" className="btn-secondary text-sm">
-                  Edit Profile
-                </Link>
-              </div>
-              
-              {userProfile ? (
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center">
-                      <UserIcon className="h-8 w-8 text-primary-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{userProfile.name}</h3>
-                      <p className="text-gray-600">{userProfile.email}</p>
-                      <div className="flex items-center mt-1">
-                        <MapPinIcon className="h-4 w-4 text-gray-400 mr-1" />
-                        <span className="text-sm text-gray-500">{userProfile.location}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <p className="text-gray-600">{userProfile.bio}</p>
-                  
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <StarIconSolid
-                          key={i}
-                          className={`h-4 w-4 ${
-                            i < Math.floor(userProfile.rating)
-                              ? 'text-yellow-400'
-                              : 'text-gray-300'
-                          }`}
-                        />
-                      ))}
-                      <span className="ml-2 text-sm text-gray-600">
-                        {userProfile.rating} ({userProfile.totalRatings} reviews)
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <UserIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">Complete your profile to get started</p>
-                  <Link to="/profile" className="btn-primary mt-4">
-                    Create Profile
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            {/* Skills */}
-            <div className="card">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Your Skills</h2>
-              
-              <div className="space-y-6">
-                <div>
-                  <h3 className="font-medium text-gray-900 mb-3">Skills You Offer</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {userProfile?.skillsOffered?.map((skill, index) => (
-                      <SkillTag key={index} skill={skill} type="offered" />
-                    ))}
-                    {(!userProfile?.skillsOffered || userProfile.skillsOffered.length === 0) && (
-                      <p className="text-gray-500 text-sm">No skills added yet</p>
-                    )}
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="font-medium text-gray-900 mb-3">Skills You Want to Learn</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {userProfile?.skillsWanted?.map((skill, index) => (
-                      <SkillTag key={index} skill={skill} type="wanted" />
-                    ))}
-                    {(!userProfile?.skillsWanted || userProfile.skillsWanted.length === 0) && (
-                      <p className="text-gray-500 text-sm">No skills added yet</p>
-                    )}
-                  </div>
+            <div className="card animate-slide-up animation-delay-200">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-neutral-800">Quick Actions</h2>
+                <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center shadow-glow-primary">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <div className="card">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
-              <div className="space-y-3">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {quickActions.map((action, index) => (
                   <Link
                     key={index}
                     to={action.link}
-                    className="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors group"
+                    className="group relative p-6 rounded-xl bg-white border-2 border-neutral-100 hover:border-transparent transition-all duration-300 hover:shadow-medium hover:scale-105"
                   >
-                    <div className={`p-2 rounded-lg mr-3 ${
-                      action.color === 'primary' ? 'bg-primary-100' :
-                      action.color === 'secondary' ? 'bg-secondary-100' :
-                      'bg-green-100'
-                    }`}>
-                      <action.icon className={`h-5 w-5 ${
-                        action.color === 'primary' ? 'text-primary-600' :
-                        action.color === 'secondary' ? 'text-secondary-600' :
-                        'text-green-600'
-                      }`} />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900 group-hover:text-primary-600">
+                    <div className={`absolute inset-0 ${action.color} opacity-0 group-hover:opacity-100 rounded-xl transition-opacity duration-300`}></div>
+                    <div className="relative z-10">
+                      <div className="text-2xl mb-3 group-hover:scale-110 transition-transform duration-300">
+                        {action.icon}
+                      </div>
+                      <h3 className="font-semibold text-neutral-800 group-hover:text-white transition-colors duration-300">
                         {action.title}
+                      </h3>
+                      <p className="text-sm text-neutral-600 group-hover:text-white/90 transition-colors duration-300">
+                        {action.description}
                       </p>
-                      <p className="text-sm text-gray-500">{action.description}</p>
                     </div>
                   </Link>
                 ))}
               </div>
             </div>
+          </div>
 
-            {/* Recent Matches */}
-            <div className="card">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900">Recent Matches</h2>
-                <Link to="/matches" className="text-primary-600 hover:text-primary-700 text-sm">
-                  View All
+          {/* Recent Activity */}
+          <div className="lg:col-span-1">
+            <div className="card animate-slide-up animation-delay-400">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-neutral-800">Recent Activity</h2>
+                <div className="w-10 h-10 bg-gradient-secondary rounded-full flex items-center justify-center shadow-glow-secondary">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="space-y-4">
+                {recentActivities.map((activity, index) => (
+                  <div
+                    key={activity.id}
+                    className="flex items-start space-x-3 p-3 rounded-lg hover:bg-neutral-50 transition-colors duration-200 animate-slide-left"
+                    style={{ animationDelay: `${index * 150}ms` }}
+                  >
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${activity.color}`}>
+                      {activity.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-neutral-800 text-sm">
+                        {activity.title}
+                      </p>
+                      <p className="text-neutral-600 text-xs truncate">
+                        {activity.description}
+                      </p>
+                      <p className="text-neutral-500 text-xs mt-1">
+                        {activity.time}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 pt-4 border-t border-neutral-200">
+                <Link
+                  to="/activity"
+                  className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center transition-colors duration-200"
+                >
+                  View all activity
+                  <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </Link>
               </div>
-              
-              <div className="space-y-4">
-                {potentialMatches.slice(0, 3).map((match, index) => (
-                  <MatchCard key={index} match={match} compact />
-                ))}
-                
-                {potentialMatches.length === 0 && (
-                  <div className="text-center py-4">
-                    <SparklesIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-500 text-sm">No matches yet</p>
-                    <p className="text-gray-400 text-xs mt-1">
-                      Update your skills to find matches
-                    </p>
-                  </div>
-                )}
+            </div>
+          </div>
+        </div>
+
+        {/* Skills Overview */}
+        <div className="mt-8 animate-slide-up animation-delay-600">
+          <div className="card">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-neutral-800">Your Skills</h2>
+              <Link
+                to="/profile"
+                className="btn-secondary"
+              >
+                Manage Skills
+              </Link>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-6">
+              {/* Skills You Offer */}
+              <div>
+                <h3 className="font-semibold text-neutral-800 mb-3 flex items-center">
+                  <span className="w-2 h-2 bg-primary-500 rounded-full mr-2"></span>
+                  Skills You Offer ({skillsOffered.length})
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {skillsOffered.length > 0 ? (
+                    <>
+                      {skillsOffered.slice(0, 6).map((skill, index) => (
+                        <span
+                          key={index}
+                          className="skill-tag animate-bounce-gentle"
+                          style={{ animationDelay: `${index * 100}ms` }}
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                      {skillsOffered.length > 6 && (
+                        <span className="skill-tag bg-neutral-100 text-neutral-600">
+                          +{skillsOffered.length - 6} more
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-neutral-500 text-sm italic">No skills added yet. Add some skills to get started!</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Skills You Want */}
+              <div>
+                <h3 className="font-semibold text-neutral-800 mb-3 flex items-center">
+                  <span className="w-2 h-2 bg-secondary-500 rounded-full mr-2"></span>
+                  Skills You Want ({skillsWanted.length})
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {skillsWanted.length > 0 ? (
+                    <>
+                      {skillsWanted.slice(0, 6).map((skill, index) => (
+                        <span
+                          key={index}
+                          className="skill-tag-secondary animate-bounce-gentle"
+                          style={{ animationDelay: `${index * 100}ms` }}
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                      {skillsWanted.length > 6 && (
+                        <span className="skill-tag-secondary bg-neutral-100 text-neutral-600">
+                          +{skillsWanted.length - 6} more
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-neutral-500 text-sm italic">No learning goals yet. Add skills you want to learn!</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Progress Section */}
+        <div className="mt-8 animate-slide-up animation-delay-800">
+          <div className="card-gradient">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-white mb-2">Keep Learning! 🚀</h2>
+              <p className="text-white/90 mb-6">
+                You're doing great! Continue building connections and sharing knowledge.
+              </p>
+              <div className="flex justify-center space-x-4">
+                <Link to="/matches" className="btn-secondary">
+                  Find More Matches
+                </Link>
+                <Link to="/profile" className="btn-accent">
+                  Update Profile
+                </Link>
               </div>
             </div>
           </div>

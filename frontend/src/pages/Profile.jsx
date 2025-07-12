@@ -29,6 +29,10 @@ const Profile = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
+  // Safely get skills with fallbacks
+  const skillsOffered = userProfile?.skillsOffered || [];
+  const skillsWanted = userProfile?.skillsWanted || [];
+
   useEffect(() => {
     if (userProfile) {
       setFormData({
@@ -133,34 +137,48 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          {/* Header */}
-          <div className="px-6 py-8 bg-gradient-to-r from-primary-600 to-secondary-600">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-6">
-                <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center">
-                  <UserIcon className="h-12 w-12 text-primary-600" />
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 pt-20">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          {/* Profile Header */}
+          <div className="card-gradient mb-8 animate-fade-in">
+            <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6">
+              <div className="relative">
+                <div className="w-24 h-24 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center avatar floating-element">
+                  <UserIcon className="h-12 w-12 text-white" />
                 </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-white">
-                    {userProfile?.name || 'Complete Your Profile'}
-                  </h1>
-                  <p className="text-primary-100 mt-2">
-                    {userProfile?.email}
-                  </p>
-                  {userProfile?.location && (
-                    <div className="flex items-center mt-2">
-                      <MapPinIcon className="h-4 w-4 text-primary-200 mr-1" />
-                      <span className="text-primary-100">{userProfile.location}</span>
-                    </div>
-                  )}
+                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gradient-to-br from-accent-500 to-accent-600 rounded-full flex items-center justify-center shadow-glow-accent">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+              <div className="flex-1 text-center md:text-left">
+                <h1 className="text-3xl font-bold text-white mb-2">
+                  {userProfile?.name || 'Complete Your Profile'}
+                </h1>
+                <p className="text-white/90 mb-3">
+                  {userProfile?.email}
+                </p>
+                {userProfile?.location && (
+                  <div className="flex items-center justify-center md:justify-start mb-3">
+                    <MapPinIcon className="h-4 w-4 text-white/80 mr-2" />
+                    <span className="text-white/90">{userProfile.location}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-center md:justify-start space-x-4">
+                  <div className="flex items-center space-x-1">
+                    <StarIcon className="h-4 w-4 text-yellow-400" />
+                    <span className="text-white/90">4.8</span>
+                  </div>
+                  <div className="text-white/90">
+                    {skillsOffered.length + skillsWanted.length} Skills
+                  </div>
                 </div>
               </div>
               <button
                 onClick={() => setIsEditing(!isEditing)}
-                className="bg-white text-primary-600 hover:bg-primary-50 font-medium py-2 px-4 rounded-lg transition-colors"
+                className="btn-secondary"
               >
                 <PencilIcon className="h-4 w-4 inline mr-2" />
                 {isEditing ? 'Cancel' : 'Edit Profile'}
@@ -169,219 +187,257 @@ const Profile = () => {
           </div>
 
           {/* Profile Form */}
-          <div className="px-6 py-8">
+          <div className="space-y-8">
             {isEditing ? (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Full Name
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Location
-                    </label>
-                    <input
-                      type="text"
-                      name="location"
-                      value={formData.location}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="City, State/Country"
-                    />
+              <div className="card animate-slide-up">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-neutral-800">Edit Profile</h2>
+                  <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center shadow-glow-primary">
+                    <PencilIcon className="w-6 h-6 text-white" />
                   </div>
                 </div>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                        Full Name
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        className="input-field"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                        Location
+                      </label>
+                      <input
+                        type="text"
+                        name="location"
+                        value={formData.location}
+                        onChange={handleInputChange}
+                        className="input-field"
+                        placeholder="City, State/Country"
+                      />
+                    </div>
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Bio
-                  </label>
-                  <textarea
-                    name="bio"
-                    value={formData.bio}
-                    onChange={handleInputChange}
-                    rows={4}
-                    className="input-field"
-                    placeholder="Tell others about yourself, your interests, and what you're passionate about..."
-                  />
-                </div>
-
-                {/* Skills Section */}
-                <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Add Skills
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Bio
                     </label>
-                    <div className="flex gap-2 mb-4">
-                      <select
-                        value={skillType}
-                        onChange={(e) => setSkillType(e.target.value)}
-                        className="input-field w-32"
-                      >
-                        <option value="offered">I Offer</option>
-                        <option value="wanted">I Want</option>
-                      </select>
-                      <div className="flex-1 relative">
-                        <input
-                          type="text"
-                          value={newSkill}
-                          onChange={handleSkillInput}
-                          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                          onFocus={() => newSkill && setShowSuggestions(true)}
-                          className="input-field"
-                          placeholder="Type a skill..."
-                        />
-                        {showSuggestions && suggestions.length > 0 && (
-                          <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1">
-                            {suggestions.map((skill, index) => (
-                              <button
-                                key={index}
-                                type="button"
-                                onClick={() => addSkill(skill)}
-                                className="w-full text-left px-3 py-2 hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
-                              >
-                                {skill}
-                              </button>
-                            ))}
-                          </div>
+                    <textarea
+                      name="bio"
+                      value={formData.bio}
+                      onChange={handleInputChange}
+                      rows={4}
+                      className="input-field"
+                      placeholder="Tell others about yourself, your interests, and what you're passionate about..."
+                    />
+                  </div>
+
+                  {/* Skills Section */}
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                        Add Skills
+                      </label>
+                      <div className="flex gap-2 mb-4">
+                        <select
+                          value={skillType}
+                          onChange={(e) => setSkillType(e.target.value)}
+                          className="input-field w-32"
+                        >
+                          <option value="offered">I Offer</option>
+                          <option value="wanted">I Want</option>
+                        </select>
+                        <div className="flex-1 relative">
+                          <input
+                            type="text"
+                            value={newSkill}
+                            onChange={handleSkillInput}
+                            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                            onFocus={() => newSkill && setShowSuggestions(true)}
+                            className="input-field"
+                            placeholder="Type a skill..."
+                          />
+                          {showSuggestions && suggestions.length > 0 && (
+                            <div className="absolute z-10 w-full bg-white/90 backdrop-blur-md border border-neutral-200 rounded-lg shadow-strong mt-1">
+                              {suggestions.map((skill, index) => (
+                                <button
+                                  key={index}
+                                  type="button"
+                                  onClick={() => addSkill(skill)}
+                                  className="w-full text-left px-3 py-2 hover:bg-primary-50 hover:text-primary-700 first:rounded-t-lg last:rounded-b-lg transition-colors duration-200"
+                                >
+                                  {skill}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => addSkill()}
+                          className="btn-primary"
+                        >
+                          <PlusIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-lg font-medium text-neutral-800 mb-3 flex items-center">
+                        <span className="w-2 h-2 bg-primary-500 rounded-full mr-2"></span>
+                        Skills You Offer
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {formData.skillsOffered.map((skill, index) => (
+                          <SkillTag
+                            key={index}
+                            skill={skill}
+                            type="offered"
+                            onRemove={(skill) => removeSkill(skill, 'offered')}
+                          />
+                        ))}
+                        {formData.skillsOffered.length === 0 && (
+                          <p className="text-neutral-500 text-sm italic">No skills added yet</p>
                         )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => addSkill()}
-                        className="btn-primary"
-                      >
-                        <PlusIcon className="h-4 w-4" />
-                      </button>
+                    </div>
+
+                    <div>
+                      <h3 className="text-lg font-medium text-neutral-800 mb-3 flex items-center">
+                        <span className="w-2 h-2 bg-secondary-500 rounded-full mr-2"></span>
+                        Skills You Want to Learn
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {formData.skillsWanted.map((skill, index) => (
+                          <SkillTag
+                            key={index}
+                            skill={skill}
+                            type="wanted"
+                            onRemove={(skill) => removeSkill(skill, 'wanted')}
+                          />
+                        ))}
+                        {formData.skillsWanted.length === 0 && (
+                          <p className="text-neutral-500 text-sm italic">No skills added yet</p>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-3">Skills You Offer</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {formData.skillsOffered.map((skill, index) => (
-                        <SkillTag
-                          key={index}
-                          skill={skill}
-                          type="offered"
-                          onRemove={(skill) => removeSkill(skill, 'offered')}
-                        />
-                      ))}
-                      {formData.skillsOffered.length === 0 && (
-                        <p className="text-gray-500 text-sm">No skills added yet</p>
+                  <div className="flex justify-end space-x-3 pt-6 border-t border-neutral-200">
+                    <button
+                      type="button"
+                      onClick={handleCancel}
+                      className="btn-ghost"
+                    >
+                      <XMarkIcon className="h-4 w-4 mr-2" />
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="btn-primary"
+                    >
+                      {loading ? (
+                        <LoadingSpinner size="sm" className="mr-2" />
+                      ) : (
+                        <CheckIcon className="h-4 w-4 mr-2" />
                       )}
-                    </div>
+                      Save Profile
+                    </button>
                   </div>
-
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-3">Skills You Want to Learn</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {formData.skillsWanted.map((skill, index) => (
-                        <SkillTag
-                          key={index}
-                          skill={skill}
-                          type="wanted"
-                          onRemove={(skill) => removeSkill(skill, 'wanted')}
-                        />
-                      ))}
-                      {formData.skillsWanted.length === 0 && (
-                        <p className="text-gray-500 text-sm">No skills added yet</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-                  <button
-                    type="button"
-                    onClick={handleCancel}
-                    className="btn-secondary"
-                  >
-                    <XMarkIcon className="h-4 w-4 mr-2" />
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="btn-primary"
-                  >
-                    {loading ? (
-                      <LoadingSpinner size="sm" className="mr-2" />
-                    ) : (
-                      <CheckIcon className="h-4 w-4 mr-2" />
-                    )}
-                    Save Profile
-                  </button>
-                </div>
-              </form>
+                </form>
+              </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {/* Profile Info */}
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">About Me</h2>
-                  <p className="text-gray-600">
+                <div className="card animate-slide-up">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-neutral-800">About Me</h2>
+                    <div className="w-12 h-12 bg-gradient-secondary rounded-full flex items-center justify-center shadow-glow-secondary">
+                      <UserIcon className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
+                  <p className="text-neutral-600 leading-relaxed">
                     {userProfile?.bio || 'No bio added yet. Click "Edit Profile" to add one.'}
                   </p>
                 </div>
 
                 {/* Rating */}
-                {userProfile?.rating && (
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4">Rating</h2>
-                    <div className="flex items-center">
-                      <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <StarIconSolid
-                            key={i}
-                            className={`h-5 w-5 ${
-                              i < Math.floor(userProfile.rating)
-                                ? 'text-yellow-400'
-                                : 'text-gray-300'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <span className="ml-2 text-lg font-medium text-gray-900">
-                        {userProfile.rating}
-                      </span>
-                      <span className="ml-2 text-gray-600">
-                        ({userProfile.totalRatings} reviews)
-                      </span>
+                <div className="card animate-slide-up animation-delay-200">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-neutral-800">Rating & Reviews</h2>
+                    <div className="w-12 h-12 bg-gradient-to-br from-accent-500 to-accent-600 rounded-full flex items-center justify-center shadow-glow-accent">
+                      <StarIcon className="w-6 h-6 text-white" />
                     </div>
                   </div>
-                )}
+                  <div className="flex items-center">
+                    <div className="flex items-center">
+                      {[...Array(5)].map((_, i) => (
+                        <StarIconSolid
+                          key={i}
+                          className={`h-6 w-6 ${
+                            i < Math.floor(userProfile?.rating || 4.8)
+                              ? 'text-yellow-400'
+                              : 'text-neutral-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="ml-3 text-2xl font-bold text-neutral-800">
+                      {userProfile?.rating || '4.8'}
+                    </span>
+                    <span className="ml-3 text-neutral-600">
+                      ({userProfile?.totalRatings || '24'} reviews)
+                    </span>
+                  </div>
+                </div>
 
                 {/* Skills */}
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4">Skills I Offer</h2>
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="card animate-slide-up animation-delay-300">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-xl font-bold text-neutral-800 flex items-center">
+                        <span className="w-3 h-3 bg-primary-500 rounded-full mr-2"></span>
+                        Skills I Offer
+                      </h2>
+                      <div className="text-sm text-neutral-600 bg-primary-50 px-3 py-1 rounded-full">
+                        {skillsOffered.length} skills
+                      </div>
+                    </div>
                     <div className="flex flex-wrap gap-2">
-                      {userProfile?.skillsOffered?.map((skill, index) => (
+                      {skillsOffered.map((skill, index) => (
                         <SkillTag key={index} skill={skill} type="offered" />
                       ))}
-                      {(!userProfile?.skillsOffered || userProfile.skillsOffered.length === 0) && (
-                        <p className="text-gray-500">No skills added yet</p>
+                      {skillsOffered.length === 0 && (
+                        <p className="text-neutral-500 italic">No skills added yet</p>
                       )}
                     </div>
                   </div>
 
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4">Skills I Want to Learn</h2>
+                  <div className="card animate-slide-up animation-delay-400">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-xl font-bold text-neutral-800 flex items-center">
+                        <span className="w-3 h-3 bg-secondary-500 rounded-full mr-2"></span>
+                        Skills I Want to Learn
+                      </h2>
+                      <div className="text-sm text-neutral-600 bg-secondary-50 px-3 py-1 rounded-full">
+                        {skillsWanted.length} skills
+                      </div>
+                    </div>
                     <div className="flex flex-wrap gap-2">
-                      {userProfile?.skillsWanted?.map((skill, index) => (
+                      {skillsWanted.map((skill, index) => (
                         <SkillTag key={index} skill={skill} type="wanted" />
                       ))}
-                      {(!userProfile?.skillsWanted || userProfile.skillsWanted.length === 0) && (
-                        <p className="text-gray-500">No skills added yet</p>
+                      {skillsWanted.length === 0 && (
+                        <p className="text-neutral-500 italic">No skills added yet</p>
                       )}
                     </div>
                   </div>

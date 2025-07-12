@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { generateClient } from 'aws-amplify/api';
 import { useAuth } from './AuthContext';
+import apiService, { handleApiError } from '../services/api';
 
 const SkillContext = createContext();
 
@@ -34,31 +34,22 @@ export const SkillProvider = ({ children }) => {
 
   // Get user profile
   const getUserProfile = async () => {
-    if (!user) return;
+    if (!user?.userId) return;
     
     try {
       setLoading(true);
-      // This would be a GraphQL query to get user profile
-      // const result = await API.graphql(graphqlOperation(getUser, { id: user.sub }));
-      // setUserProfile(result.data.getUser);
+      setError(null);
       
-      // Mock data for now
-      const mockProfile = {
-        id: user.sub,
-        name: user.attributes?.name || 'John Doe',
-        email: user.attributes?.email || 'john@example.com',
-        bio: 'Passionate about learning and sharing knowledge.',
-        skillsOffered: ['JavaScript', 'React', 'Photography'],
-        skillsWanted: ['Python', 'Spanish', 'Guitar'],
-        location: 'San Francisco, CA',
-        rating: 4.8,
-        totalRatings: 24,
-        createdAt: new Date().toISOString(),
-      };
-      setUserProfile(mockProfile);
+      const response = await apiService.users.getCurrentUser();
+      if (response.success) {
+        setUserProfile(response.data);
+      } else {
+        throw new Error(response.message || 'Failed to fetch user profile');
+      }
     } catch (err) {
-      setError(err.message);
-      console.error('Error fetching user profile:', err);
+      const errorData = handleApiError(err);
+      setError(errorData.message);
+      console.error('Error fetching user profile:', errorData);
     } finally {
       setLoading(false);
     }
@@ -66,18 +57,25 @@ export const SkillProvider = ({ children }) => {
 
   // Update user profile
   const updateUserProfile = async (profileData) => {
+    if (!user?.userId) {
+      throw new Error('User not authenticated');
+    }
+    
     try {
       setLoading(true);
-      // This would be a GraphQL mutation to update user profile
-      // const result = await API.graphql(graphqlOperation(updateUser, { input: profileData }));
-      // setUserProfile(result.data.updateUser);
+      setError(null);
       
-      // Mock update for now
-      const updatedProfile = { ...userProfile, ...profileData };
-      setUserProfile(updatedProfile);
-      return updatedProfile;
+      const response = await apiService.users.updateUser(user.userId, profileData);
+      if (response.success) {
+        setUserProfile(response.data);
+        return response.data;
+      } else {
+        throw new Error(response.message || 'Failed to update profile');
+      }
     } catch (err) {
-      setError(err.message);
+      const errorData = handleApiError(err);
+      setError(errorData.message);
+      console.error('Error updating user profile:', errorData);
       throw err;
     } finally {
       setLoading(false);
@@ -86,90 +84,55 @@ export const SkillProvider = ({ children }) => {
 
   // Find potential matches based on skills
   const findMatches = async () => {
-    if (!userProfile) return;
+    if (!user?.userId) return;
     
     try {
       setLoading(true);
-      // This would be a complex GraphQL query to find matches
-      // const result = await API.graphql(graphqlOperation(findPotentialMatches, { 
-      //   skillsWanted: userProfile.skillsWanted,
-      //   skillsOffered: userProfile.skillsOffered,
-      //   excludeUserId: userProfile.id
-      // }));
+      setError(null);
       
-      // Mock potential matches
-      const mockMatches = [
-        {
-          id: 'match-1',
-          user: {
-            id: 'user-2',
-            name: 'Sarah Johnson',
-            bio: 'Frontend developer and language enthusiast',
-            skillsOffered: ['Python', 'Spanish'],
-            skillsWanted: ['JavaScript', 'Photography'],
-            location: 'San Francisco, CA',
-            rating: 4.9,
-            avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b167?w=150&h=150&fit=crop&crop=face'
-          },
-          matchingSkills: ['Python', 'Spanish'],
-          compatibility: 0.85,
-          distance: '2.3 miles',
-        },
-        {
-          id: 'match-2',
-          user: {
-            id: 'user-3',
-            name: 'Carlos Rodriguez',
-            bio: 'Musician and web developer',
-            skillsOffered: ['Guitar', 'Node.js'],
-            skillsWanted: ['React', 'Photography'],
-            location: 'Oakland, CA',
-            rating: 4.7,
-            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
-          },
-          matchingSkills: ['Guitar'],
-          compatibility: 0.78,
-          distance: '8.1 miles',
-        },
-      ];
-      
-      setPotentialMatches(mockMatches);
+      const response = await apiService.matches.getPotentialMatches(user.userId);
+      if (response.success) {
+        setPotentialMatches(response.data);
+      } else {
+        throw new Error(response.message || 'Failed to find matches');
+      }
     } catch (err) {
-      setError(err.message);
-      console.error('Error finding matches:', err);
+      const errorData = handleApiError(err);
+      setError(errorData.message);
+      console.error('Error finding matches:', errorData);
     } finally {
       setLoading(false);
     }
   };
 
   // Send match request
-  const sendMatchRequest = async (matchId, message = '') => {
+  const sendMatchRequest = async (targetUserId, message = '') => {
+    if (!user?.userId) {
+      throw new Error('User not authenticated');
+    }
+    
     try {
       setLoading(true);
-      // This would be a GraphQL mutation to create a match request
-      // const result = await API.graphql(graphqlOperation(createMatchRequest, {
-      //   input: {
-      //     userId1: userProfile.id,
-      //     userId2: matchId,
-      //     message,
-      //     status: 'pending'
-      //   }
-      // }));
+      setError(null);
       
-      // Mock match request
-      const newMatch = {
-        id: `match-${Date.now()}`,
-        userId1: userProfile.id,
-        userId2: matchId,
+      const matchData = {
+        userId1: user.userId,
+        userId2: targetUserId,
         message,
-        status: 'pending',
-        createdAt: new Date().toISOString(),
+        status: 'pending'
       };
       
-      setMatches(prev => [...prev, newMatch]);
-      return newMatch;
+      const response = await apiService.matches.createMatchRequest(matchData);
+      if (response.success) {
+        setMatches(prev => [...prev, response.data]);
+        return response.data;
+      } else {
+        throw new Error(response.message || 'Failed to send match request');
+      }
     } catch (err) {
-      setError(err.message);
+      const errorData = handleApiError(err);
+      setError(errorData.message);
+      console.error('Error sending match request:', errorData);
       throw err;
     } finally {
       setLoading(false);
@@ -180,60 +143,189 @@ export const SkillProvider = ({ children }) => {
   const respondToMatch = async (matchId, response) => {
     try {
       setLoading(true);
-      // This would be a GraphQL mutation to update match status
-      // const result = await API.graphql(graphqlOperation(updateMatchRequest, {
-      //   input: {
-      //     id: matchId,
-      //     status: response
-      //   }
-      // }));
+      setError(null);
       
-      // Mock response
-      setMatches(prev => prev.map(match => 
-        match.id === matchId 
-          ? { ...match, status: response }
-          : match
-      ));
+      const result = await apiService.matches.respondToMatch(matchId, response);
+      if (result.success) {
+        setMatches(prev => prev.map(match => 
+          match.id === matchId 
+            ? { ...match, status: response }
+            : match
+        ));
+        return result.data;
+      } else {
+        throw new Error(result.message || 'Failed to respond to match');
+      }
     } catch (err) {
-      setError(err.message);
+      const errorData = handleApiError(err);
+      setError(errorData.message);
+      console.error('Error responding to match:', errorData);
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Get user's matches
+  // Get user matches
   const getUserMatches = async () => {
-    if (!userProfile) return;
+    if (!user?.userId) return;
     
     try {
       setLoading(true);
-      // This would be a GraphQL query to get user's matches
-      // const result = await API.graphql(graphqlOperation(listMatchesByUser, {
-      //   userId: userProfile.id
-      // }));
+      setError(null);
       
-      // Mock matches
-      const mockMatches = [
-        {
-          id: 'match-accepted-1',
-          userId1: userProfile.id,
-          userId2: 'user-2',
-          skill: 'Python',
-          status: 'accepted',
-          createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          otherUser: {
-            id: 'user-2',
-            name: 'Sarah Johnson',
-            avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b167?w=150&h=150&fit=crop&crop=face'
-          }
-        },
-      ];
-      
-      setMatches(mockMatches);
+      const response = await apiService.matches.getUserMatches(user.userId);
+      if (response.success) {
+        setMatches(response.data);
+      } else {
+        throw new Error(response.message || 'Failed to fetch matches');
+      }
     } catch (err) {
-      setError(err.message);
-      console.error('Error fetching matches:', err);
+      const errorData = handleApiError(err);
+      setError(errorData.message);
+      console.error('Error fetching matches:', errorData);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add skill to user
+  const addSkill = async (skill, type = 'offered') => {
+    if (!user?.userId) {
+      throw new Error('User not authenticated');
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await apiService.skills.addSkill(user.userId, skill, type);
+      if (response.success) {
+        setUserProfile(response.data);
+        return response.data;
+      } else {
+        throw new Error(response.message || 'Failed to add skill');
+      }
+    } catch (err) {
+      const errorData = handleApiError(err);
+      setError(errorData.message);
+      console.error('Error adding skill:', errorData);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Remove skill from user
+  const removeSkill = async (skill, type = 'offered') => {
+    if (!user?.userId) {
+      throw new Error('User not authenticated');
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await apiService.skills.removeSkill(user.userId, skill, type);
+      if (response.success) {
+        setUserProfile(response.data);
+        return response.data;
+      } else {
+        throw new Error(response.message || 'Failed to remove skill');
+      }
+    } catch (err) {
+      const errorData = handleApiError(err);
+      setError(errorData.message);
+      console.error('Error removing skill:', errorData);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Search users by skills
+  const searchUsersBySkills = async (skills, excludeUserId = null) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await apiService.users.searchUsersBySkills(skills, excludeUserId);
+      if (response.success) {
+        return response.data;
+      } else {
+        throw new Error(response.message || 'Failed to search users');
+      }
+    } catch (err) {
+      const errorData = handleApiError(err);
+      setError(errorData.message);
+      console.error('Error searching users:', errorData);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Search users by location
+  const searchUsersByLocation = async (location, limit = 50) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await apiService.users.searchUsersByLocation(location, limit);
+      if (response.success) {
+        return response.data;
+      } else {
+        throw new Error(response.message || 'Failed to search users by location');
+      }
+    } catch (err) {
+      const errorData = handleApiError(err);
+      setError(errorData.message);
+      console.error('Error searching users by location:', errorData);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Rate a user
+  const rateUser = async (userId, rating, comment = '') => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await apiService.ratings.rateUser(userId, rating, comment);
+      if (response.success) {
+        return response.data;
+      } else {
+        throw new Error(response.message || 'Failed to rate user');
+      }
+    } catch (err) {
+      const errorData = handleApiError(err);
+      setError(errorData.message);
+      console.error('Error rating user:', errorData);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get user statistics
+  const getUserStats = async (userId) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await apiService.users.getUserStats(userId);
+      if (response.success) {
+        return response.data;
+      } else {
+        throw new Error(response.message || 'Failed to get user stats');
+      }
+    } catch (err) {
+      const errorData = handleApiError(err);
+      setError(errorData.message);
+      console.error('Error getting user stats:', errorData);
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -241,28 +333,55 @@ export const SkillProvider = ({ children }) => {
 
   // Load user profile when user changes
   useEffect(() => {
-    if (user) {
+    if (user?.userId) {
       getUserProfile();
+      getUserMatches();
     } else {
       setUserProfile(null);
       setMatches([]);
       setPotentialMatches([]);
     }
-  }, [user]);
+  }, [user?.userId]);
+
+  // Auto-refresh matches when user profile changes
+  useEffect(() => {
+    if (userProfile?.skillsOffered?.length > 0 || userProfile?.skillsWanted?.length > 0) {
+      findMatches();
+    }
+  }, [userProfile?.skillsOffered, userProfile?.skillsWanted]);
 
   const value = {
+    // State
     userProfile,
     matches,
     potentialMatches,
     loading,
     error,
     popularSkills,
+    
+    // Methods
     getUserProfile,
     updateUserProfile,
     findMatches,
     sendMatchRequest,
     respondToMatch,
     getUserMatches,
+    addSkill,
+    removeSkill,
+    searchUsersBySkills,
+    searchUsersByLocation,
+    rateUser,
+    getUserStats,
+    
+    // Utility methods
+    clearError: () => setError(null),
+    refreshData: () => {
+      if (user?.userId) {
+        getUserProfile();
+        getUserMatches();
+        findMatches();
+      }
+    }
   };
 
   return (
@@ -270,4 +389,6 @@ export const SkillProvider = ({ children }) => {
       {children}
     </SkillContext.Provider>
   );
-}; 
+};
+
+export default SkillContext; 

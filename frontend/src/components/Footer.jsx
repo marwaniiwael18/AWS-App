@@ -2,30 +2,36 @@ import { Link } from 'react-router-dom';
 import { SparklesIcon } from '@heroicons/react/24/outline';
 
 const Footer = () => {
+  const currentYear = new Date().getFullYear();
+  const stats = {
+    users: '10,000+',
+    skillExchanges: '50,000+',
+    countries: '150+'
+  };
   const footerLinks = {
     product: [
-      { name: 'Features', href: '#' },
-      { name: 'Pricing', href: '#' },
-      { name: 'Security', href: '#' },
-      { name: 'Roadmap', href: '#' },
+      { name: 'Features', href: '/features' },
+      { name: 'Pricing', href: '/pricing' },
+      { name: 'Security', href: '/security' },
+      { name: 'Roadmap', href: '/roadmap' },
     ],
     company: [
-      { name: 'About', href: '#' },
-      { name: 'Blog', href: '#' },
-      { name: 'Careers', href: '#' },
-      { name: 'Contact', href: '#' },
+      { name: 'About', href: '/about' },
+      { name: 'Blog', href: '/blog' },
+      { name: 'Careers', href: '/careers' },
+      { name: 'Contact', href: '/contact' },
     ],
     support: [
-      { name: 'Help Center', href: '#' },
-      { name: 'Community', href: '#' },
-      { name: 'Guidelines', href: '#' },
-      { name: 'Status', href: '#' },
+      { name: 'Help Center', href: '/help' },
+      { name: 'Community', href: '/community' },
+      { name: 'Guidelines', href: '/guidelines' },
+      { name: 'Status', href: '/status' },
     ],
     legal: [
-      { name: 'Privacy', href: '#' },
-      { name: 'Terms', href: '#' },
-      { name: 'Cookie Policy', href: '#' },
-      { name: 'Licenses', href: '#' },
+      { name: 'Privacy', href: '/privacy' },
+      { name: 'Terms', href: '/terms' },
+      { name: 'Cookie Policy', href: '/cookies' },
+      { name: 'Licenses', href: '/licenses' },
     ],
   };
 
@@ -39,9 +45,14 @@ const Footer = () => {
                       <SparklesIcon className="h-8 w-8 text-primary-600" />
         <span className="ml-2 text-xl font-bold text-gray-900">SkillSwap</span>
             </Link>
-            <p className="text-gray-600 text-sm">
+            <p className="text-gray-600 text-sm mb-4">
               The platform where knowledge meets opportunity. Connect, learn, and grow with our community.
             </p>
+            <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+              <div><span className="font-medium text-primary-600">{stats.users}</span> Users</div>
+              <div><span className="font-medium text-primary-600">{stats.skillExchanges}</span> Exchanges</div>
+              <div><span className="font-medium text-primary-600">{stats.countries}</span> Countries</div>
+            </div>
           </div>
 
           {/* Product */}
@@ -124,7 +135,7 @@ const Footer = () => {
         <div className="border-t border-gray-200 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-600 text-sm">
-              © 2024 SkillSwap. All rights reserved.
+              © {currentYear} SkillSwap. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <a href="#" className="text-gray-400 hover:text-primary-600 transition-colors">

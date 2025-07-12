@@ -8,14 +8,14 @@ import {
   DevicePhoneMobileIcon,
   EnvelopeIcon,
   TrashIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  CheckIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const Settings = () => {
   const { user, signOut } = useAuth();
-  const { updateUserAttributes, loading } = useAuth();
   const [settings, setSettings] = useState({
     notifications: {
       email: true,
@@ -39,6 +39,7 @@ const Settings = () => {
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [savedSettings, setSavedSettings] = useState(false);
 
   const handleSettingChange = (category, key, value) => {
     setSettings(prev => ({
@@ -48,13 +49,15 @@ const Settings = () => {
         [key]: value
       }
     }));
+    setSavedSettings(false);
   };
 
   const handleSave = async () => {
     try {
       // In a real app, this would save to the backend
       console.log('Settings saved:', settings);
-      alert('Settings saved successfully!');
+      setSavedSettings(true);
+      setTimeout(() => setSavedSettings(false), 3000);
     } catch (error) {
       console.error('Error saving settings:', error);
       alert('Failed to save settings. Please try again.');
@@ -82,6 +85,7 @@ const Settings = () => {
     {
       title: 'Notifications',
       icon: BellIcon,
+      description: 'Manage how you receive notifications',
       settings: [
         {
           key: 'email',
@@ -126,8 +130,9 @@ const Settings = () => {
       ]
     },
     {
-      title: 'Privacy',
+      title: 'Privacy & Security',
       icon: ShieldCheckIcon,
+      description: 'Control your privacy and data visibility',
       settings: [
         {
           key: 'profileVisibility',
@@ -171,6 +176,7 @@ const Settings = () => {
     {
       title: 'Preferences',
       icon: GlobeAltIcon,
+      description: 'Customize your experience',
       settings: [
         {
           key: 'language',
@@ -219,17 +225,10 @@ const Settings = () => {
     },
   ];
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
           <p className="text-gray-600 mt-2">
@@ -237,21 +236,27 @@ const Settings = () => {
           </p>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-8">
+          {/* Settings Sections */}
           {settingSections.map((section) => (
-            <div key={section.title} className="bg-white rounded-lg shadow-sm">
+            <div key={section.title} className="bg-white rounded-xl shadow-sm border border-gray-200">
               <div className="p-6">
-                <div className="flex items-center mb-4">
-                  <section.icon className="h-5 w-5 text-gray-500 mr-2" />
-                  <h2 className="text-lg font-semibold text-gray-900">{section.title}</h2>
+                <div className="flex items-center mb-2">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                    <section.icon className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">{section.title}</h2>
+                    <p className="text-sm text-gray-500">{section.description}</p>
+                  </div>
                 </div>
                 
-                <div className="space-y-4">
+                <div className="mt-6 space-y-6">
                   {section.settings.map((setting) => (
-                    <div key={setting.key} className="flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0">
+                    <div key={setting.key} className="flex items-center justify-between">
                       <div className="flex-1 pr-4">
                         <div className="font-medium text-gray-900">{setting.label}</div>
-                        <div className="text-sm text-gray-500">{setting.description}</div>
+                        <div className="text-sm text-gray-500 mt-1">{setting.description}</div>
                       </div>
                       
                       <div className="flex-shrink-0">
@@ -263,13 +268,13 @@ const Settings = () => {
                               checked={setting.value}
                               onChange={(e) => setting.onChange(e.target.checked)}
                             />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                           </label>
                         ) : (
                           <select
                             value={setting.value}
                             onChange={(e) => setting.onChange(e.target.value)}
-                            className="block w-40 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                            className="block w-48 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                           >
                             {setting.options.map((option) => (
                               <option key={option.value} value={option.value}>
@@ -287,47 +292,68 @@ const Settings = () => {
           ))}
 
           {/* Save Button */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex justify-between items-center">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Save Changes</h3>
-                <p className="text-sm text-gray-500">Make sure to save your settings before leaving this page.</p>
+              <div className="flex items-center">
+                {savedSettings ? (
+                  <div className="flex items-center text-green-600">
+                    <CheckIcon className="h-5 w-5 mr-2" />
+                    <span className="font-medium">Settings saved successfully!</span>
+                  </div>
+                ) : (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Save Changes</h3>
+                    <p className="text-sm text-gray-500 mt-1">Make sure to save your settings before leaving this page.</p>
+                  </div>
+                )}
               </div>
               <button
                 onClick={handleSave}
                 className="btn-primary"
-                disabled={loading}
+                disabled={savedSettings}
               >
-                {loading ? <LoadingSpinner size="sm" className="mr-2" /> : null}
-                Save Settings
+                {savedSettings ? 'Saved' : 'Save Settings'}
               </button>
             </div>
           </div>
 
-          {/* Danger Zone */}
-          <div className="bg-white rounded-lg shadow-sm border border-red-200">
-            <div className="p-6">
-              <div className="flex items-center mb-4">
-                <ExclamationTriangleIcon className="h-5 w-5 text-red-500 mr-2" />
-                <h2 className="text-lg font-semibold text-red-900">Danger Zone</h2>
+          {/* Account Management */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center mb-6">
+              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
+                <UserIcon className="h-5 w-5 text-gray-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Account Management</h2>
+                <p className="text-sm text-gray-500">Manage your account and data</p>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex items-center justify-between py-4 border-b border-gray-200">
+                <div>
+                  <div className="font-medium text-gray-900">Export Data</div>
+                  <div className="text-sm text-gray-500 mt-1">Download a copy of your account data</div>
+                </div>
+                <button className="btn-secondary">
+                  Export Data
+                </button>
               </div>
               
-              <div className="space-y-4">
-                <div className="flex items-center justify-between py-3">
-                  <div className="flex-1 pr-4">
-                    <div className="font-medium text-red-900">Delete Account</div>
-                    <div className="text-sm text-red-600">
-                      Permanently delete your account and all associated data. This action cannot be undone.
-                    </div>
+              <div className="flex items-center justify-between py-4">
+                <div>
+                  <div className="font-medium text-red-900">Delete Account</div>
+                  <div className="text-sm text-red-600 mt-1">
+                    Permanently delete your account and all data. This cannot be undone.
                   </div>
-                  <button
-                    onClick={() => setShowDeleteModal(true)}
-                    className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                  >
-                    <TrashIcon className="h-4 w-4 mr-2 inline" />
-                    Delete Account
-                  </button>
                 </div>
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  <TrashIcon className="h-4 w-4 mr-2 inline" />
+                  Delete Account
+                </button>
               </div>
             </div>
           </div>
@@ -337,9 +363,11 @@ const Settings = () => {
       {/* Delete Account Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
             <div className="flex items-center mb-4">
-              <ExclamationTriangleIcon className="h-6 w-6 text-red-500 mr-2" />
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
+              </div>
               <h3 className="text-lg font-semibold text-gray-900">Delete Account</h3>
             </div>
             
@@ -356,7 +384,7 @@ const Settings = () => {
               value={deleteConfirm}
               onChange={(e) => setDeleteConfirm(e.target.value)}
               placeholder="Type DELETE to confirm"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent mb-4"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent mb-6"
             />
             
             <div className="flex justify-end space-x-3">
