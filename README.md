@@ -1,388 +1,301 @@
-# 🚀 SkillSwap - AWS-Powered Skill Exchange Platform
+# 🚀 SkillSwap - Professional Skill Exchange Platform
 
-A modern, full-stack skill-sharing platform built with React, Node.js, and AWS services. Connect with others to exchange knowledge, learn new skills, and build meaningful connections.
+A modern, full-stack web application that connects professionals to exchange skills and knowledge. Built with React, Node.js, and AWS services.
 
-## 🏗️ **Architecture Overview**
+![SkillSwap Demo](https://via.placeholder.com/800x400?text=SkillSwap+Demo)
 
-### **Frontend**
-- **React 19** with Vite for fast development
-- **Tailwind CSS** with modern green-purple gradient design
-- **React Router** for navigation
-- **AWS Amplify** for authentication (production ready)
-- **Axios** for API communication
-- **Socket.IO Client** for real-time chat
+## ✨ Features
 
-### **Backend**
-- **Node.js & Express** REST API
-- **Socket.IO** for real-time messaging
-- **AWS SDK v2** for service integration
-- **JWT** authentication with AWS Cognito
-- **Express Validator** for input validation
+- 🔐 **Secure Authentication** - AWS Cognito integration with email verification
+- 👤 **Dynamic User Profiles** - Customizable profiles with skills and bio
+- 🎯 **Smart Matching** - AI-powered skill matching algorithm
+- 💬 **Real-time Chat** - WebSocket-based messaging system
+- 📊 **Analytics Dashboard** - Track your skill exchanges and progress
+- 🎨 **Modern UI/UX** - Beautiful gradient design with smooth animations
+- 📱 **Responsive Design** - Works perfectly on all devices
+- 🔒 **Privacy & Security** - Comprehensive privacy controls
 
-### **AWS Services**
-- **DynamoDB** - NoSQL database for all data storage
+## 🛠️ Tech Stack
+
+### Frontend
+- **React 18** - Modern React with hooks
+- **Vite** - Fast build tool and dev server
+- **Tailwind CSS** - Utility-first CSS framework
+- **Heroicons** - Beautiful SVG icons
+- **AWS Amplify** - AWS services integration
+- **Socket.IO Client** - Real-time communication
+
+### Backend
+- **Node.js** - JavaScript runtime
+- **Express.js** - Web application framework
+- **Socket.IO** - Real-time bidirectional communication
+- **AWS SDK** - AWS services integration
+- **JWT** - JSON Web Tokens for authentication
+- **Helmet** - Security middleware
+
+### Database Options
+- **DynamoDB** - AWS NoSQL database (recommended)
+- **MongoDB** - Document database
+- **PostgreSQL** - Relational database
+- **In-memory** - For testing and development
+
+### AWS Services
 - **Cognito** - User authentication and management
-- **S3** - File storage for profile pictures and documents
-- **IAM** - Access control and permissions
+- **DynamoDB** - NoSQL database
+- **S3** - File storage
+- **API Gateway** - API management (optional)
+- **Lambda** - Serverless functions (optional)
 
-### **Database Schema (DynamoDB)**
-```
-📋 Tables:
-├── skillswap-users      # User profiles and skills
-├── skillswap-matches    # Match requests and responses
-├── skillswap-messages   # Chat messages
-├── skillswap-ratings    # User ratings and reviews
-└── skillswap-skills     # Skill catalog (optional)
-```
+## 🚀 Quick Start
 
-## 🛠️ **Prerequisites**
+### Prerequisites
+- Node.js 18+ and npm
+- AWS Account (for production features)
+- Git
 
-- **Node.js** >= 18.0.0
-- **npm** or **yarn**
-- **AWS Account** with appropriate permissions
-- **AWS CLI** configured (optional but recommended)
-
-## 🚀 **Quick Start**
-
-### 1. **Clone the Repository**
+### 1. Clone the Repository
 ```bash
-git clone <repository-url>
-cd skillswap
+git clone https://github.com/marwaniiwael18/AWS-App.git
+cd AWS-App
 ```
 
-### 2. **Backend Setup**
+### 2. Quick Setup (Recommended)
 ```bash
+# Run the automated setup script
+./quick-start.sh
+```
+
+This script will:
+- ✅ Check prerequisites
+- 📦 Install all dependencies
+- 📝 Create environment files
+- 🚀 Create start scripts
+
+### 3. Manual Setup (Alternative)
+
+#### Install Dependencies
+```bash
+# Backend dependencies
 cd backend
 npm install
-npm run setup  # Creates .env file and sets up basic configuration
-```
 
-### 3. **Frontend Setup**
-```bash
-cd frontend
+# Frontend dependencies
+cd ../frontend
 npm install
 ```
 
-### 4. **AWS Configuration**
-Create your AWS resources and update the `.env` file:
+#### Environment Configuration
+```bash
+# Copy environment files
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env.local
 
-```env
-# AWS Configuration
+# Edit with your actual credentials
+```
+
+### 4. Start the Application
+
+#### Option A: Start Both Servers
+```bash
+./start-both.sh
+```
+
+#### Option B: Start Separately
+```bash
+# Terminal 1: Backend
+./start-backend.sh
+
+# Terminal 2: Frontend
+./start-frontend.sh
+```
+
+### 5. Access Your Application
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:3000
+- **Health Check**: http://localhost:3000/health
+
+## 📋 Configuration Guide
+
+### AWS Services Setup
+
+For full functionality, you'll need to configure these AWS services:
+
+#### 1. AWS Cognito (Authentication)
+```bash
+# Required environment variables
+COGNITO_USER_POOL_ID=us-east-1_XXXXXXXXX
+COGNITO_CLIENT_ID=XXXXXXXXXXXXXXXXXXXXXXXXXX
+```
+
+#### 2. Database Setup (Choose One)
+
+**DynamoDB (Recommended)**
+```bash
+DB_TYPE=dynamodb
+DYNAMODB_TABLE_USERS=skillswap-users
+DYNAMODB_TABLE_MATCHES=skillswap-matches
+DYNAMODB_TABLE_MESSAGES=skillswap-messages
+```
+
+**MongoDB**
+```bash
+DB_TYPE=mongodb
+MONGODB_URI=mongodb://localhost:27017/skillswap
+```
+
+**PostgreSQL**
+```bash
+DB_TYPE=postgresql
+DATABASE_URL=postgresql://username:password@localhost:5432/skillswap
+```
+
+**In-Memory (Testing)**
+```bash
+DB_TYPE=memory
+# No additional configuration needed
+```
+
+#### 3. File Storage (S3)
+```bash
+S3_BUCKET_NAME=skillswap-storage-bucket
 AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=your_access_key_id
-AWS_SECRET_ACCESS_KEY=your_secret_access_key
-
-# AWS Cognito
-COGNITO_USER_POOL_ID=your_user_pool_id
-COGNITO_CLIENT_ID=your_client_id
-
-# Enable development mode (bypasses AWS auth)
-BYPASS_AUTH=true
 ```
 
-### 5. **Initialize Database**
-```bash
-cd backend
-npm run setup-db  # Creates all DynamoDB tables
+For detailed setup instructions, see [SETUP_GUIDE.md](./SETUP_GUIDE.md).
+
+## 🏗️ Project Structure
+
+```
+AWS-App/
+├── frontend/                 # React frontend application
+│   ├── src/
+│   │   ├── components/      # Reusable UI components
+│   │   ├── contexts/        # React contexts (Auth, Skills)
+│   │   ├── pages/           # Page components
+│   │   ├── services/        # API services
+│   │   └── aws-exports.js   # AWS configuration
+│   ├── public/              # Static assets
+│   └── package.json
+├── backend/                 # Node.js backend application
+│   ├── src/
+│   │   ├── controllers/     # Route controllers
+│   │   ├── middleware/      # Express middleware
+│   │   ├── routes/          # API routes
+│   │   ├── services/        # Business logic
+│   │   └── config/          # Configuration files
+│   ├── server.js            # Main server file
+│   └── package.json
+├── SETUP_GUIDE.md          # Detailed setup instructions
+├── quick-start.sh          # Automated setup script
+└── README.md               # This file
 ```
 
-### 6. **Start Development Servers**
-```bash
-# Terminal 1 - Backend
-cd backend
-npm run dev
+## 🔧 Development
 
-# Terminal 2 - Frontend
-cd frontend
-npm run dev
-```
+### Available Scripts
 
-Visit `http://localhost:5173` to see the application! 🎉
-
-## 🔧 **AWS Setup Guide**
-
-### **1. AWS Cognito Setup**
-```bash
-# Create User Pool
-aws cognito-idp create-user-pool \
-    --pool-name skillswap-users \
-    --policies PasswordPolicy='{MinimumLength=8,RequireUppercase=true,RequireLowercase=true,RequireNumbers=true}' \
-    --auto-verified-attributes email
-
-# Create User Pool Client
-aws cognito-idp create-user-pool-client \
-    --user-pool-id your-user-pool-id \
-    --client-name skillswap-client
-```
-
-### **2. DynamoDB Tables**
-The setup script automatically creates all required tables:
-- Users table with email and location indexes
-- Matches table with user and status indexes
-- Messages table with conversation and sender indexes
-- Ratings table with user indexes
-
-### **3. IAM Permissions**
-Create an IAM user with these permissions:
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "dynamodb:*",
-                "cognito-idp:*",
-                "s3:*"
-            ],
-            "Resource": "*"
-        }
-    ]
-}
-```
-
-## 📡 **API Endpoints**
-
-### **Authentication**
-- `POST /api/auth/login` - User login
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/refresh` - Refresh token
-- `POST /api/auth/logout` - User logout
-
-### **Users**
-- `GET /api/users/me` - Get current user profile
-- `GET /api/users/:userId` - Get user by ID
-- `PUT /api/users/:userId` - Update user profile
-- `GET /api/users/:userId/stats` - Get user statistics
-- `GET /api/users/search/skills` - Search users by skills
-- `GET /api/users/search/location` - Search users by location
-
-### **Skills**
-- `POST /api/users/:userId/skills` - Add skill to user
-- `DELETE /api/users/:userId/skills` - Remove skill from user
-
-### **Matches**
-- `GET /api/users/:userId/matches` - Get potential matches
-- `POST /api/matches` - Create match request
-- `GET /api/matches/user/:userId` - Get user's matches
-- `PUT /api/matches/:matchId/respond` - Accept/decline match
-
-### **Messages**
-- `GET /api/messages/:conversationId` - Get conversation messages
-- `POST /api/messages` - Send message
-- `GET /api/messages/conversations/:userId` - Get user conversations
-
-## 🎨 **Design System**
-
-### **Color Palette**
-```css
-/* Primary Colors - Green */
-primary-50: #f0fdf4    primary-600: #16a34a
-primary-100: #dcfce7   primary-700: #15803d
-primary-200: #bbf7d0   primary-800: #166534
-primary-300: #86efac   primary-900: #14532d
-primary-400: #4ade80
-primary-500: #22c55e
-
-/* Secondary Colors - Purple */
-secondary-50: #faf5ff   secondary-600: #9333ea
-secondary-100: #f3e8ff  secondary-700: #7c3aed
-secondary-200: #e9d5ff  secondary-800: #6b21a8
-secondary-300: #d8b4fe  secondary-900: #581c87
-secondary-400: #c084fc
-secondary-500: #a855f7
-
-/* Accent Colors - Orange */
-accent-500: #f97316
-accent-600: #ea580c
-```
-
-### **Components**
-- **Glassmorphism** cards with backdrop blur
-- **Gradient buttons** with hover animations
-- **Smooth transitions** (300ms duration)
-- **Modern animations** with staggered delays
-- **Mobile-first** responsive design
-
-## 🔄 **Real-Time Features**
-
-### **Socket.IO Events**
-```javascript
-// Connection
-socket.on('connect', () => {});
-
-// Messages
-socket.emit('join-room', { conversationId });
-socket.emit('send-message', { messageData });
-socket.on('new-message', (message) => {});
-
-// Typing indicators
-socket.emit('typing', { conversationId, userId });
-socket.on('user-typing', ({ userId, conversationId }) => {});
-
-// User presence
-socket.on('user-online', ({ userId }) => {});
-socket.on('user-offline', ({ userId }) => {});
-```
-
-## 🧪 **Development Features**
-
-### **Mock Data Mode**
-Set `BYPASS_AUTH=true` in `.env` to enable development mode:
-- Bypasses AWS Cognito authentication
-- Uses mock user data
-- Enables rapid development without AWS setup
-
-### **Hot Module Replacement**
-Both frontend and backend support hot reloading:
-- Frontend: Vite HMR
-- Backend: Nodemon with file watching
-
-### **Error Handling**
-- Comprehensive error handling with proper HTTP status codes
-- Client-side error boundaries
-- API error interceptors with automatic token refresh
-
-## 📊 **Performance Optimizations**
-
-### **Frontend**
-- **Code splitting** with React.lazy()
-- **Image optimization** with lazy loading
-- **Memoization** for expensive computations
-- **Virtual scrolling** for large lists
-
-### **Backend**
-- **Connection pooling** for database connections
-- **Compression** middleware for response size
-- **Rate limiting** to prevent abuse
-- **Caching** with Redis (optional)
-
-### **Database**
-- **Global Secondary Indexes** for efficient queries
-- **Batch operations** for bulk updates
-- **Pagination** for large result sets
-- **Query optimization** with proper key design
-
-## 🔐 **Security Features**
-
-### **Authentication & Authorization**
-- **JWT tokens** with AWS Cognito
-- **Role-based access control** (RBAC)
-- **API key authentication** for sensitive operations
-- **CORS configuration** for cross-origin requests
-
-### **Data Protection**
-- **Input validation** with express-validator
-- **SQL injection prevention** (N/A for NoSQL)
-- **XSS protection** with helmet.js
-- **Rate limiting** to prevent DoS attacks
-
-### **Privacy**
-- **Data encryption** at rest and in transit
-- **PII anonymization** options
-- **GDPR compliance** features
-- **User data export/deletion**
-
-## 🚀 **Production Deployment**
-
-### **Backend (AWS Lambda + API Gateway)**
-```bash
-# Install Serverless Framework
-npm install -g serverless
-
-# Deploy to AWS
-cd backend
-serverless deploy
-```
-
-### **Frontend (AWS S3 + CloudFront)**
-```bash
-# Build for production
-cd frontend
-npm run build
-
-# Deploy to S3
-aws s3 sync dist/ s3://your-bucket-name --delete
-```
-
-### **Database (DynamoDB)**
-- Use **On-Demand billing** for variable traffic
-- Enable **Point-in-Time Recovery** for backups
-- Set up **Auto Scaling** for provisioned capacity
-- Configure **Global Tables** for multi-region support
-
-## 📈 **Monitoring & Analytics**
-
-### **AWS CloudWatch**
-- API Gateway metrics
-- Lambda function metrics
-- DynamoDB performance metrics
-- Custom application metrics
-
-### **Application Monitoring**
-- Error tracking with Sentry
-- Performance monitoring
-- User analytics with Google Analytics
-- A/B testing capabilities
-
-## 🧪 **Testing**
-
-### **Backend Tests**
-```bash
-cd backend
-npm test                 # Run all tests
-npm run test:unit       # Unit tests only
-npm run test:integration # Integration tests
-npm run test:coverage   # Coverage report
-```
-
-### **Frontend Tests**
+#### Frontend
 ```bash
 cd frontend
-npm test                # Run all tests
-npm run test:e2e       # End-to-end tests
-npm run test:component # Component tests
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm run lint         # Run ESLint
 ```
 
-## 🤝 **Contributing**
+#### Backend
+```bash
+cd backend
+npm run dev          # Start development server with nodemon
+npm start            # Start production server
+npm test             # Run tests
+```
 
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Commit your changes**: `git commit -m 'Add amazing feature'`
-4. **Push to the branch**: `git push origin feature/amazing-feature`
-5. **Open a Pull Request**
+### Environment Variables
 
-## 📝 **License**
+#### Frontend (.env.local)
+```env
+VITE_AWS_REGION=us-east-1
+VITE_AWS_USER_POOLS_ID=us-east-1_XXXXXXXXX
+VITE_AWS_USER_POOLS_WEB_CLIENT_ID=XXXXXXXXXXXXXXXXXXXXXXXXXX
+VITE_API_BASE_URL=http://localhost:3000
+VITE_SOCKET_URL=http://localhost:3000
+```
+
+#### Backend (.env)
+```env
+PORT=3000
+NODE_ENV=development
+DB_TYPE=memory
+AWS_REGION=us-east-1
+JWT_SECRET=your-super-secret-jwt-key
+```
+
+## 🚀 Deployment
+
+### AWS Deployment (Recommended)
+- **Frontend**: AWS Amplify or S3 + CloudFront
+- **Backend**: AWS Lambda + API Gateway or EC2
+- **Database**: DynamoDB or RDS
+
+### Alternative Platforms
+- **Frontend**: Vercel, Netlify, GitHub Pages
+- **Backend**: Railway, Render, Heroku
+- **Database**: MongoDB Atlas, PlanetScale, Supabase
+
+## 🧪 Testing
+
+### Run Tests
+```bash
+# Backend tests
+cd backend
+npm test
+
+# Frontend tests
+cd frontend
+npm test
+```
+
+### Test Coverage
+```bash
+# Backend coverage
+cd backend
+npm run test:coverage
+
+# Frontend coverage
+cd frontend
+npm run test:coverage
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 **Support**
+## 🆘 Support
 
-### **Common Issues**
-- **DynamoDB Access Denied**: Check IAM permissions
-- **Cognito Setup**: Verify User Pool configuration
-- **CORS Errors**: Update backend CORS settings
-- **WebSocket Connection**: Check firewall settings
+- 📚 [Setup Guide](./SETUP_GUIDE.md) - Detailed configuration instructions
+- 🐛 [Issues](https://github.com/marwaniiwael18/AWS-App/issues) - Report bugs or request features
+- 📖 [AWS Documentation](https://docs.aws.amazon.com/) - AWS services documentation
+- 💬 [Discussions](https://github.com/marwaniiwael18/AWS-App/discussions) - Community support
 
-### **Getting Help**
-- 📧 Email: support@skillswap.com
-- 💬 Discord: [Join our community](https://discord.gg/skillswap)
-- 🐛 Issues: [GitHub Issues](https://github.com/your-repo/issues)
-- 📖 Docs: [Full Documentation](https://docs.skillswap.com)
+## 🙏 Acknowledgments
 
-## 🎯 **Roadmap**
-
-- [ ] **Mobile App** (React Native)
-- [ ] **Video Calling** (WebRTC integration)
-- [ ] **AI-Powered Matching** (ML recommendations)
-- [ ] **Skill Verification** (Badges & certificates)
-- [ ] **Payment Integration** (Stripe/PayPal)
-- [ ] **Advanced Analytics** (User behavior tracking)
-- [ ] **Multi-language Support** (i18n)
-- [ ] **Progressive Web App** (PWA features)
+- [React](https://reactjs.org/) - The web framework used
+- [AWS](https://aws.amazon.com/) - Cloud services provider
+- [Tailwind CSS](https://tailwindcss.com/) - CSS framework
+- [Heroicons](https://heroicons.com/) - Icon library
+- [Socket.IO](https://socket.io/) - Real-time communication
 
 ---
 
-**Built with ❤️ using AWS, React, and Node.js**
+**Made with ❤️ by [Marwan Iwael](https://github.com/marwaniiwael18)**
 
-*Ready to start sharing skills and building connections? Let's go!* 🚀 
+⭐ Star this repository if you find it helpful! 
