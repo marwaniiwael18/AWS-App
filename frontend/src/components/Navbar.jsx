@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useSkill } from '../contexts/SkillContext';
 import AuthModal from './AuthModal';
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
+  const { userProfile } = useSkill();
   const location = useLocation();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -26,6 +28,11 @@ const Navbar = () => {
   ];
 
   const isActiveLink = (href) => location.pathname === href;
+
+  // Get user display info
+  const userDisplayName = userProfile?.name || user?.attributes?.name || user?.name || 'User';
+  const userEmail = userProfile?.email || user?.attributes?.email || user?.email || '';
+  const userPhoto = userProfile?.profilePhoto || null;
 
   return (
     <>
@@ -50,10 +57,10 @@ const Navbar = () => {
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`relative px-3 py-2 rounded-lg font-medium transition-all duration-300 ${
+                    className={`relative px-3 py-2 font-medium transition-all duration-300 ${
                       isActiveLink(item.href)
-                        ? 'text-primary-600 bg-primary-50'
-                        : 'text-neutral-700 hover:text-primary-600 hover:bg-primary-50'
+                        ? 'text-primary-600'
+                        : 'text-neutral-700 hover:text-primary-600'
                     }`}
                   >
                     {item.name}
@@ -77,19 +84,30 @@ const Navbar = () => {
                   </Link>
                   <div className="relative group">
                     <button className="flex items-center space-x-2 p-2 rounded-full hover:bg-neutral-100 transition-all duration-300">
-                      <img
-                        src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || user.email)}&background=22c55e&color=fff&size=32`}
-                        alt={user.name || user.email}
-                        className="w-8 h-8 rounded-full avatar"
-                      />
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-primary flex items-center justify-center">
+                        {userPhoto ? (
+                          <img
+                            src={`http://localhost:3000${userPhoto}`}
+                            alt={userDisplayName}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div className={`w-full h-full flex items-center justify-center text-white text-sm font-medium ${userPhoto ? 'hidden' : 'flex'}`}>
+                          {userDisplayName.charAt(0).toUpperCase()}
+                        </div>
+                      </div>
                       <svg className="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </button>
                     <div className="absolute right-0 mt-2 w-48 bg-white/90 backdrop-blur-md rounded-xl shadow-strong border border-white/20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
                       <div className="p-3 border-b border-neutral-200">
-                        <div className="font-medium text-neutral-900">{user.name || 'User'}</div>
-                        <div className="text-sm text-neutral-600">{user.email}</div>
+                        <div className="font-medium text-neutral-900">{userDisplayName}</div>
+                        <div className="text-sm text-neutral-600">{userEmail}</div>
                       </div>
                       <div className="py-2">
                         <Link to="/profile" className="block px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-100 transition-colors duration-200">
@@ -149,8 +167,8 @@ const Navbar = () => {
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`block px-3 py-2 rounded-lg font-medium transition-colors duration-200 ${
                       isActiveLink(item.href)
-                        ? 'text-primary-600 bg-primary-50'
-                        : 'text-neutral-700 hover:text-primary-600 hover:bg-primary-50'
+                        ? 'bg-primary-50 text-primary-600'
+                        : 'text-neutral-700 hover:bg-neutral-100'
                     }`}
                   >
                     {item.name}
@@ -158,48 +176,52 @@ const Navbar = () => {
                 );
               })}
               
-              {user ? (
+              {user && (
                 <div className="border-t border-neutral-200 pt-4 mt-4">
-                  <div className="flex items-center space-x-3 px-3 py-2 mb-2">
-                    <img
-                      src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || user.email)}&background=22c55e&color=fff&size=32`}
-                      alt={user.name || user.email}
-                      className="w-8 h-8 rounded-full avatar"
-                    />
+                  <div className="flex items-center space-x-3 px-3 py-2">
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-primary flex items-center justify-center">
+                      {userPhoto ? (
+                        <img
+                          src={`http://localhost:3000${userPhoto}`}
+                          alt={userDisplayName}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div className={`w-full h-full flex items-center justify-center text-white font-medium ${userPhoto ? 'hidden' : 'flex'}`}>
+                        {userDisplayName.charAt(0).toUpperCase()}
+                      </div>
+                    </div>
                     <div>
-                      <div className="font-medium text-neutral-900">{user.name || 'User'}</div>
-                      <div className="text-sm text-neutral-600">{user.email}</div>
+                      <div className="font-medium text-neutral-900">{userDisplayName}</div>
+                      <div className="text-sm text-neutral-600">{userEmail}</div>
                     </div>
                   </div>
-                  <Link
-                    to="/settings"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block px-3 py-2 text-neutral-700 hover:bg-neutral-100 rounded-lg transition-colors duration-200"
-                  >
-                    Settings
-                  </Link>
                   <button
-                    onClick={async () => {
-                      await handleLogout();
+                    onClick={() => {
+                      handleLogout();
                       setIsMobileMenuOpen(false);
                     }}
-                    className="block w-full text-left px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                    className="w-full text-left px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
                   >
                     Sign Out
                   </button>
                 </div>
-              ) : (
-                <div className="border-t border-neutral-200 pt-4 mt-4">
-                  <button
-                    onClick={() => {
-                      setShowAuthModal(true);
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="w-full btn-primary"
-                  >
-                    Sign In
-                  </button>
-                </div>
+              )}
+              
+              {!user && (
+                <button
+                  onClick={() => {
+                    setShowAuthModal(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="btn-primary w-full"
+                >
+                  Sign In
+                </button>
               )}
             </div>
           </div>

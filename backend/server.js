@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 require('dotenv').config();
@@ -65,6 +66,9 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(compression());
 
+// Static file serving for uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -98,79 +102,90 @@ io.on('connection', (socket) => {
   });
   
   // Handle joining chat rooms
-  socket.on('join-chat', (matchId) => {
-    if (!socket.authenticated) {
-      socket.emit('error', { message: 'Not authenticated' });
-      return;
-    }
-    
-    socket.join(`chat-${matchId}`);
-    console.log(`User ${socket.id} joined chat ${matchId}`);
-    socket.emit('chat-joined', { matchId });
+  socket.on('join-room', (room) => {
+    socket.join(room);
+    console.log(`User ${socket.id} joined room: ${room}`);
+  });
+  
+  // Handle leaving chat rooms
+  socket.on('leave-room', (room) => {
+    socket.leave(room);
+    console.log(`User ${socket.id} left room: ${room}`);
   });
   
   // Handle sending messages
   socket.on('send-message', (data) => {
-    if (!socket.authenticated) {
-      socket.emit('error', { message: 'Not authenticated' });
-      return;
-    }
+    const { room, message, userId } = data;
     
-    const { matchId, message, senderId, senderName } = data;
-    
-    // Broadcast message to all users in the chat room
-    io.to(`chat-${matchId}`).emit('new-message', {
-      id: Date.now(),
-      senderId,
-      senderName,
-      content: message,
-      timestamp: new Date().toISOString(),
-      matchId
+    // Broadcast message to room
+    socket.to(room).emit('receive-message', {
+      message,
+      userId,
+      timestamp: new Date().toISOString()
     });
-    
-    console.log(`Message sent to chat ${matchId}:`, message);
   });
   
   // Handle typing indicators
   socket.on('typing', (data) => {
-    const { matchId, isTyping } = data;
-    socket.to(`chat-${matchId}`).emit('user-typing', {
-      userId: socket.id,
-      isTyping
-    });
+    const { room, userId, isTyping } = data;
+    socket.to(room).emit('user-typing', { userId, isTyping });
   });
   
-  // Handle disconnect
+  // Handle skill match notifications
+  socket.on('skill-match', (data) => {
+    const { targetUserId, matchData } = data;
+    
+    // Send notification to target user
+    socket.to(targetUserId).emit('match-notification', matchData);
+  });
+  
+  // Handle user presence
+  socket.on('user-online', (userId) => {
+    socket.userId = userId;
+    socket.broadcast.emit('user-status-change', { userId, status: 'online' });
+  });
+  
+  // Handle disconnection
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
+    
+    if (socket.userId) {
+      socket.broadcast.emit('user-status-change', { 
+        userId: socket.userId, 
+        status: 'offline' 
+      });
+    }
   });
 });
 
-// 404 handler
+// Error handling middleware (should be last)
+app.use(errorHandler);
+
+// Handle 404 errors
 app.use('*', (req, res) => {
   res.status(404).json({
-    error: 'Not Found',
+    success: false,
     message: `Route ${req.originalUrl} not found`,
     timestamp: new Date().toISOString()
   });
 });
 
-// Error handling middleware
-app.use(errorHandler);
+// Initialize Socket.IO service
+console.log('Socket.IO service initialized');
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
+  console.log('SIGTERM received. Shutting down gracefully...');
   server.close(() => {
-    console.log('Process terminated');
+    console.log('Server closed.');
     process.exit(0);
   });
 });
 
 process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully');
+  console.log('SIGINT received. Shutting down gracefully...');
   server.close(() => {
-    console.log('Process terminated');
+    console.log('Server closed.');
     process.exit(0);
   });
 });
@@ -190,4 +205,4 @@ Server is ready to accept connections! 🎉
   `);
 });
 
-module.exports = app; 
+module.exports = { app, server, io }; 

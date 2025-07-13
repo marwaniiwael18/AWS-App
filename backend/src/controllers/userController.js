@@ -1,5 +1,7 @@
 const userService = require('../services/userService');
 const { validationResult } = require('express-validator');
+const path = require('path');
+const fs = require('fs').promises;
 
 class UserController {
   
@@ -109,6 +111,108 @@ class UserController {
       res.status(500).json({
         success: false,
         message: 'Failed to update user profile',
+        error: error.message
+      });
+    }
+  }
+
+  // Upload profile photo
+  async uploadProfilePhoto(req, res) {
+    try {
+      const userId = req.user?.userId;
+      
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          message: 'User ID is required'
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: 'No file uploaded'
+        });
+      }
+
+      // Create uploads directory if it doesn't exist
+      const uploadsDir = path.join(process.cwd(), 'uploads', 'profiles');
+      await fs.mkdir(uploadsDir, { recursive: true });
+
+      // Generate unique filename
+      const fileExtension = path.extname(req.file.originalname);
+      const fileName = `${userId}_${Date.now()}${fileExtension}`;
+      const filePath = path.join(uploadsDir, fileName);
+
+      // Save file
+      await fs.writeFile(filePath, req.file.buffer);
+
+      // Generate URL for the file
+      const profilePhotoUrl = `/uploads/profiles/${fileName}`;
+
+      // Update user profile with photo URL
+      const updatedUser = await userService.updateUser(userId, {
+        profilePhoto: profilePhotoUrl
+      });
+
+      res.json({
+        success: true,
+        message: 'Profile photo uploaded successfully',
+        data: {
+          profilePhoto: profilePhotoUrl,
+          user: updatedUser
+        }
+      });
+    } catch (error) {
+      console.error('Error in uploadProfilePhoto:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to upload profile photo',
+        error: error.message
+      });
+    }
+  }
+
+  // Delete profile photo
+  async deleteProfilePhoto(req, res) {
+    try {
+      const userId = req.user?.userId;
+      
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          message: 'User ID is required'
+        });
+      }
+
+      // Get current user to find existing photo
+      const user = await userService.getUserById(userId);
+      
+      if (user?.profilePhoto) {
+        // Delete file from filesystem
+        const filePath = path.join(process.cwd(), user.profilePhoto);
+        try {
+          await fs.unlink(filePath);
+        } catch (fileError) {
+          console.warn('Could not delete file:', fileError.message);
+        }
+      }
+
+      // Update user profile to remove photo URL
+      const updatedUser = await userService.updateUser(userId, {
+        profilePhoto: null
+      });
+
+      res.json({
+        success: true,
+        message: 'Profile photo deleted successfully',
+        data: updatedUser
+      });
+    } catch (error) {
+      console.error('Error in deleteProfilePhoto:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete profile photo',
         error: error.message
       });
     }

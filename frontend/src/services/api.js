@@ -45,7 +45,7 @@ const apiService = {
   users: {
     // Get current user profile
     getCurrentUser: async () => {
-      const response = await api.get('/users/me');
+      const response = await api.get('/users/profile');
       return response.data;
     },
 
@@ -56,20 +56,39 @@ const apiService = {
     },
 
     // Update user profile
-    updateUser: async (userId, userData) => {
-      const response = await api.put(`/users/${userId}`, userData);
+    updateUser: async (userData) => {
+      const response = await api.put('/users/profile', userData);
+      return response.data;
+    },
+
+    // Upload profile photo
+    uploadProfilePhoto: async (file) => {
+      const formData = new FormData();
+      formData.append('profilePhoto', file);
+      
+      const response = await api.post('/users/profile/photo', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    },
+
+    // Delete profile photo
+    deleteProfilePhoto: async () => {
+      const response = await api.delete('/users/profile/photo');
       return response.data;
     },
 
     // Get user statistics
-    getUserStats: async (userId) => {
-      const response = await api.get(`/users/${userId}/stats`);
+    getUserStats: async () => {
+      const response = await api.get('/users/stats');
       return response.data;
     },
 
     // Search users
     searchUsers: async (params) => {
-      const response = await api.get('/users', { params });
+      const response = await api.get('/users/search', { params });
       return response.data;
     },
 
@@ -94,153 +113,189 @@ const apiService = {
     },
 
     // Delete user
-    deleteUser: async (userId) => {
-      const response = await api.delete(`/users/${userId}`);
+    deleteUser: async () => {
+      const response = await api.delete('/users/profile');
+      return response.data;
+    },
+
+    // Get popular skills
+    getPopularSkills: async () => {
+      const response = await api.get('/users/skills/popular');
+      return response.data;
+    },
+
+    // Add skill
+    addSkill: async (skill, type = 'offered') => {
+      const response = await api.post('/users/skills', { skill, type });
+      return response.data;
+    },
+
+    // Remove skill
+    removeSkill: async (skillId, type = 'offered') => {
+      const response = await api.delete(`/users/skills/${skillId}`, {
+        data: { type }
+      });
+      return response.data;
+    },
+
+    // Rate user
+    rateUser: async (userId, rating, comment = '') => {
+      const response = await api.post(`/users/ratings/${userId}`, {
+        rating,
+        comment,
+      });
+      return response.data;
+    },
+
+    // Get user ratings
+    getUserRatings: async () => {
+      const response = await api.get('/users/ratings');
+      return response.data;
+    },
+
+    // Block user
+    blockUser: async (userId) => {
+      const response = await api.post(`/users/block/${userId}`);
+      return response.data;
+    },
+
+    // Report user
+    reportUser: async (userId, reason, description = '') => {
+      const response = await api.post(`/users/report/${userId}`, {
+        reason,
+        description,
+      });
+      return response.data;
+    },
+
+    // Get user activity
+    getUserActivity: async () => {
+      const response = await api.get('/users/activity');
       return response.data;
     },
   },
 
   // Skills management
   skills: {
-    // Add skill to user
-    addSkill: async (userId, skill, type = 'offered') => {
-      const response = await api.post(`/users/${userId}/skills`, { skill, type });
+    // Get all skills
+    getAll: async () => {
+      const response = await api.get('/skills');
       return response.data;
     },
 
-    // Remove skill from user
-    removeSkill: async (userId, skill, type = 'offered') => {
-      const response = await api.delete(`/users/${userId}/skills`, {
-        data: { skill, type },
-      });
+    // Get popular skills
+    getPopular: async () => {
+      const response = await api.get('/skills/popular');
+      return response.data;
+    },
+
+    // Create skill
+    create: async (skillData) => {
+      const response = await api.post('/skills', skillData);
+      return response.data;
+    },
+
+    // Update skill
+    update: async (skillId, skillData) => {
+      const response = await api.put(`/skills/${skillId}`, skillData);
+      return response.data;
+    },
+
+    // Delete skill
+    delete: async (skillId) => {
+      const response = await api.delete(`/skills/${skillId}`);
       return response.data;
     },
   },
 
-  // Matching system
+  // Matches management
   matches: {
-    // Get potential matches for user
-    getPotentialMatches: async (userId, limit = 20) => {
-      const response = await api.get(`/users/${userId}/matches`, {
-        params: { limit },
+    // Get user matches
+    getAll: async () => {
+      const response = await api.get('/matches');
+      return response.data;
+    },
+
+    // Send match request
+    send: async (targetUserId, message = '') => {
+      const response = await api.post('/matches', {
+        targetUserId,
+        message,
       });
       return response.data;
     },
 
-    // Create match request
-    createMatchRequest: async (matchData) => {
-      const response = await api.post('/matches', matchData);
-      return response.data;
+    // Respond to match
+    respond: async (matchId, response) => {
+      const res = await api.put(`/matches/${matchId}`, { response });
+      return res.data;
     },
 
-    // Get user's matches
-    getUserMatches: async (userId) => {
-      const response = await api.get(`/matches/user/${userId}`);
-      return response.data;
-    },
-
-    // Respond to match request
-    respondToMatch: async (matchId, response) => {
-      const result = await api.put(`/matches/${matchId}/respond`, { response });
-      return result.data;
-    },
-
-    // Get match details
-    getMatchDetails: async (matchId) => {
-      const response = await api.get(`/matches/${matchId}`);
+    // Get potential matches
+    getPotential: async () => {
+      const response = await api.get('/matches/potential');
       return response.data;
     },
   },
 
-  // Rating system
-  ratings: {
-    // Rate a user
-    rateUser: async (userId, rating, comment = '') => {
-      const response = await api.put(`/users/${userId}/rating`, { rating, comment });
-      return response.data;
-    },
-
-    // Get user ratings
-    getUserRatings: async (userId) => {
-      const response = await api.get(`/users/${userId}/ratings`);
-      return response.data;
-    },
-  },
-
-  // Messages/Chat
+  // Messages management
   messages: {
-    // Get conversation messages
-    getMessages: async (conversationId, limit = 50, offset = 0) => {
-      const response = await api.get(`/messages/${conversationId}`, {
-        params: { limit, offset },
-      });
+    // Get conversations
+    getConversations: async () => {
+      const response = await api.get('/messages/conversations');
+      return response.data;
+    },
+
+    // Get messages for a conversation
+    getMessages: async (conversationId) => {
+      const response = await api.get(`/messages/${conversationId}`);
       return response.data;
     },
 
     // Send message
-    sendMessage: async (messageData) => {
-      const response = await api.post('/messages', messageData);
-      return response.data;
-    },
-
-    // Get user conversations
-    getConversations: async (userId) => {
-      const response = await api.get(`/messages/conversations/${userId}`);
-      return response.data;
-    },
-
-    // Mark messages as read
-    markAsRead: async (conversationId, userId) => {
-      const response = await api.put(`/messages/${conversationId}/read`, { userId });
-      return response.data;
-    },
-  },
-
-  // Health check
-  health: {
-    check: async () => {
-      const response = await api.get('/health');
+    send: async (conversationId, content) => {
+      const response = await api.post(`/messages/${conversationId}`, {
+        content,
+      });
       return response.data;
     },
   },
 };
 
-// Helper functions for common operations
+// Error handling utility
 export const handleApiError = (error) => {
   if (error.response) {
     // Server responded with error status
-    const message = error.response.data?.message || 'An error occurred';
+    const { status, data } = error.response;
     return {
-      success: false,
-      message,
-      status: error.response.status,
-      data: error.response.data,
+      status,
+      message: data.message || data.error || 'An error occurred',
+      details: data.details || null,
     };
   } else if (error.request) {
-    // Network error
+    // Request was made but no response received
     return {
-      success: false,
-      message: 'Network error. Please check your connection.',
       status: 0,
+      message: 'Network error. Please check your connection.',
+      details: null,
     };
   } else {
-    // Other error
+    // Something else happened
     return {
-      success: false,
-      message: 'An unexpected error occurred',
       status: 0,
+      message: error.message || 'An unexpected error occurred',
+      details: null,
     };
   }
 };
 
-// Authentication helpers
+// Auth token utilities
 export const setAuthToken = (token) => {
   localStorage.setItem('authToken', token);
 };
 
 export const removeAuthToken = () => {
   localStorage.removeItem('authToken');
-  localStorage.removeItem('user');
 };
 
 export const getAuthToken = () => {

@@ -1,9 +1,22 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import apiService, { handleApiError } from '../services/api';
 
 const SkillContext = createContext();
 
+// Popular skills list for autocomplete - moved outside component to prevent recreation
+const popularSkills = [
+  'JavaScript', 'Python', 'React', 'Node.js', 'AWS', 'Docker',
+  'Photography', 'Graphic Design', 'Digital Marketing', 'Writing',
+  'Spanish', 'French', 'German', 'Mandarin', 'Japanese',
+  'Guitar', 'Piano', 'Singing', 'Dancing', 'Yoga',
+  'Cooking', 'Baking', 'Gardening', 'Painting', 'Drawing',
+  'Public Speaking', 'Leadership', 'Project Management',
+  'Data Analysis', 'Machine Learning', 'UI/UX Design',
+  'Video Editing', 'Animation', '3D Modeling', 'Game Development'
+];
+
+// Custom hook for using SkillContext
 export const useSkill = () => {
   const context = useContext(SkillContext);
   if (!context) {
@@ -20,21 +33,9 @@ export const SkillProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Popular skills list for autocomplete
-  const popularSkills = [
-    'JavaScript', 'Python', 'React', 'Node.js', 'AWS', 'Docker',
-    'Photography', 'Graphic Design', 'Digital Marketing', 'Writing',
-    'Spanish', 'French', 'German', 'Mandarin', 'Japanese',
-    'Guitar', 'Piano', 'Singing', 'Dancing', 'Yoga',
-    'Cooking', 'Baking', 'Gardening', 'Painting', 'Drawing',
-    'Public Speaking', 'Leadership', 'Project Management',
-    'Data Analysis', 'Machine Learning', 'UI/UX Design',
-    'Video Editing', 'Animation', '3D Modeling', 'Game Development'
-  ];
-
   // Get user profile
-  const getUserProfile = async () => {
-    if (!user?.userId) return;
+  const getUserProfile = useCallback(async () => {
+    if (!user) return;
     
     try {
       setLoading(true);
@@ -50,14 +51,33 @@ export const SkillProvider = ({ children }) => {
       const errorData = handleApiError(err);
       setError(errorData.message);
       console.error('Error fetching user profile:', errorData);
+      
+      // Create a mock profile if user exists but no profile found
+      if (user && errorData.status === 404) {
+        const mockProfile = {
+          id: user.userId || 'mock-id',
+          name: user.name || user.attributes?.name || 'User',
+          email: user.email || user.attributes?.email || '',
+          bio: '',
+          location: '',
+          skillsOffered: [],
+          skillsWanted: [],
+          profilePhoto: null,
+          rating: 0,
+          totalRatings: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        setUserProfile(mockProfile);
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   // Update user profile
-  const updateUserProfile = async (profileData) => {
-    if (!user?.userId) {
+  const updateUserProfile = useCallback(async (profileData) => {
+    if (!user) {
       throw new Error('User not authenticated');
     }
     
@@ -65,7 +85,7 @@ export const SkillProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const response = await apiService.users.updateUser(user.userId, profileData);
+      const response = await apiService.users.updateUser(profileData);
       if (response.success) {
         setUserProfile(response.data);
         return response.data;
@@ -80,17 +100,79 @@ export const SkillProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  // Upload profile photo
+  const uploadProfilePhoto = useCallback(async (file) => {
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await apiService.users.uploadProfilePhoto(file);
+      if (response.success) {
+        // Update the user profile with the new photo URL
+        setUserProfile(prev => ({
+          ...prev,
+          profilePhoto: response.data.profilePhoto
+        }));
+        return response.data;
+      } else {
+        throw new Error(response.message || 'Failed to upload photo');
+      }
+    } catch (err) {
+      const errorData = handleApiError(err);
+      setError(errorData.message);
+      console.error('Error uploading profile photo:', errorData);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  // Delete profile photo
+  const deleteProfilePhoto = useCallback(async () => {
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await apiService.users.deleteProfilePhoto();
+      if (response.success) {
+        // Remove the photo from user profile
+        setUserProfile(prev => ({
+          ...prev,
+          profilePhoto: null
+        }));
+        return response.data;
+      } else {
+        throw new Error(response.message || 'Failed to delete photo');
+      }
+    } catch (err) {
+      const errorData = handleApiError(err);
+      setError(errorData.message);
+      console.error('Error deleting profile photo:', errorData);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
 
   // Find potential matches based on skills
-  const findMatches = async () => {
+  const findMatches = useCallback(async () => {
     if (!user?.userId) return;
     
     try {
       setLoading(true);
       setError(null);
       
-      const response = await apiService.matches.getPotentialMatches(user.userId);
+      const response = await apiService.matches.getPotential();
       if (response.success) {
         setPotentialMatches(response.data);
       } else {
@@ -103,78 +185,17 @@ export const SkillProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Send match request
-  const sendMatchRequest = async (targetUserId, message = '') => {
-    if (!user?.userId) {
-      throw new Error('User not authenticated');
-    }
-    
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const matchData = {
-        userId1: user.userId,
-        userId2: targetUserId,
-        message,
-        status: 'pending'
-      };
-      
-      const response = await apiService.matches.createMatchRequest(matchData);
-      if (response.success) {
-        setMatches(prev => [...prev, response.data]);
-        return response.data;
-      } else {
-        throw new Error(response.message || 'Failed to send match request');
-      }
-    } catch (err) {
-      const errorData = handleApiError(err);
-      setError(errorData.message);
-      console.error('Error sending match request:', errorData);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Accept/decline match request
-  const respondToMatch = async (matchId, response) => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const result = await apiService.matches.respondToMatch(matchId, response);
-      if (result.success) {
-        setMatches(prev => prev.map(match => 
-          match.id === matchId 
-            ? { ...match, status: response }
-            : match
-        ));
-        return result.data;
-      } else {
-        throw new Error(result.message || 'Failed to respond to match');
-      }
-    } catch (err) {
-      const errorData = handleApiError(err);
-      setError(errorData.message);
-      console.error('Error responding to match:', errorData);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [user]);
 
   // Get user matches
-  const getUserMatches = async () => {
+  const getUserMatches = useCallback(async () => {
     if (!user?.userId) return;
     
     try {
       setLoading(true);
       setError(null);
       
-      const response = await apiService.matches.getUserMatches(user.userId);
+      const response = await apiService.matches.getAll();
       if (response.success) {
         setMatches(response.data);
       } else {
@@ -187,10 +208,10 @@ export const SkillProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  // Add skill to user
-  const addSkill = async (skill, type = 'offered') => {
+  // Send match request
+  const sendMatchRequest = useCallback(async (targetUserId, message = '') => {
     if (!user?.userId) {
       throw new Error('User not authenticated');
     }
@@ -199,9 +220,72 @@ export const SkillProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const response = await apiService.skills.addSkill(user.userId, skill, type);
+      const response = await apiService.matches.send(targetUserId, message);
       if (response.success) {
-        setUserProfile(response.data);
+        // Refresh matches
+        getUserMatches();
+        return response.data;
+      } else {
+        throw new Error(response.message || 'Failed to send match request');
+      }
+    } catch (err) {
+      const errorData = handleApiError(err);
+      setError(errorData.message);
+      console.error('Error sending match request:', errorData);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [user, getUserMatches]);
+
+  // Respond to match request
+  const respondToMatch = useCallback(async (matchId, response) => {
+    if (!user?.userId) {
+      throw new Error('User not authenticated');
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const result = await apiService.matches.respond(matchId, response);
+      if (result.success) {
+        // Refresh matches
+        getUserMatches();
+        return result.data;
+      } else {
+        throw new Error(result.message || 'Failed to respond to match');
+      }
+    } catch (err) {
+      const errorData = handleApiError(err);
+      setError(errorData.message);
+      console.error('Error responding to match:', errorData);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [user, getUserMatches]);
+
+  // Add skill to user profile
+  const addSkill = useCallback(async (skill, type = 'offered') => {
+    if (!user?.userId) {
+      throw new Error('User not authenticated');
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await apiService.users.addSkill(skill, type);
+      if (response.success) {
+        // Update local profile
+        setUserProfile(prev => ({
+          ...prev,
+          [type === 'offered' ? 'skillsOffered' : 'skillsWanted']: [
+            ...(prev[type === 'offered' ? 'skillsOffered' : 'skillsWanted'] || []),
+            skill
+          ]
+        }));
         return response.data;
       } else {
         throw new Error(response.message || 'Failed to add skill');
@@ -214,10 +298,10 @@ export const SkillProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  // Remove skill from user
-  const removeSkill = async (skill, type = 'offered') => {
+  // Remove skill from user profile
+  const removeSkill = useCallback(async (skill, type = 'offered') => {
     if (!user?.userId) {
       throw new Error('User not authenticated');
     }
@@ -226,9 +310,15 @@ export const SkillProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const response = await apiService.skills.removeSkill(user.userId, skill, type);
+      const response = await apiService.users.removeSkill(skill, type);
       if (response.success) {
-        setUserProfile(response.data);
+        // Update local profile
+        setUserProfile(prev => ({
+          ...prev,
+          [type === 'offered' ? 'skillsOffered' : 'skillsWanted']: 
+            (prev[type === 'offered' ? 'skillsOffered' : 'skillsWanted'] || [])
+              .filter(s => s !== skill)
+        }));
         return response.data;
       } else {
         throw new Error(response.message || 'Failed to remove skill');
@@ -241,10 +331,10 @@ export const SkillProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   // Search users by skills
-  const searchUsersBySkills = async (skills, excludeUserId = null) => {
+  const searchUsersBySkills = useCallback(async (skills, excludeUserId = null) => {
     try {
       setLoading(true);
       setError(null);
@@ -258,15 +348,15 @@ export const SkillProvider = ({ children }) => {
     } catch (err) {
       const errorData = handleApiError(err);
       setError(errorData.message);
-      console.error('Error searching users:', errorData);
+      console.error('Error searching users by skills:', errorData);
       throw err;
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Search users by location
-  const searchUsersByLocation = async (location, limit = 50) => {
+  const searchUsersByLocation = useCallback(async (location, limit = 50) => {
     try {
       setLoading(true);
       setError(null);
@@ -275,7 +365,7 @@ export const SkillProvider = ({ children }) => {
       if (response.success) {
         return response.data;
       } else {
-        throw new Error(response.message || 'Failed to search users by location');
+        throw new Error(response.message || 'Failed to search users');
       }
     } catch (err) {
       const errorData = handleApiError(err);
@@ -285,15 +375,19 @@ export const SkillProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Rate a user
-  const rateUser = async (userId, rating, comment = '') => {
+  // Rate user
+  const rateUser = useCallback(async (userId, rating, comment = '') => {
+    if (!user?.userId) {
+      throw new Error('User not authenticated');
+    }
+    
     try {
       setLoading(true);
       setError(null);
       
-      const response = await apiService.ratings.rateUser(userId, rating, comment);
+      const response = await apiService.users.rateUser(userId, rating, comment);
       if (response.success) {
         return response.data;
       } else {
@@ -307,51 +401,44 @@ export const SkillProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   // Get user statistics
-  const getUserStats = async (userId) => {
+  const getUserStats = useCallback(async () => {
+    if (!user?.userId) return null;
+    
     try {
       setLoading(true);
       setError(null);
       
-      const response = await apiService.users.getUserStats(userId);
+      const response = await apiService.users.getUserStats();
       if (response.success) {
         return response.data;
       } else {
-        throw new Error(response.message || 'Failed to get user stats');
+        throw new Error(response.message || 'Failed to fetch user stats');
       }
     } catch (err) {
       const errorData = handleApiError(err);
       setError(errorData.message);
-      console.error('Error getting user stats:', errorData);
-      throw err;
+      console.error('Error fetching user stats:', errorData);
+      return null;
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   // Load user profile when user changes
   useEffect(() => {
-    if (user?.userId) {
+    if (user) {
       getUserProfile();
-      getUserMatches();
     } else {
       setUserProfile(null);
       setMatches([]);
       setPotentialMatches([]);
     }
-  }, [user?.userId]);
+  }, [user, getUserProfile]);
 
-  // Auto-refresh matches when user profile changes
-  useEffect(() => {
-    if (userProfile?.skillsOffered?.length > 0 || userProfile?.skillsWanted?.length > 0) {
-      findMatches();
-    }
-  }, [userProfile?.skillsOffered, userProfile?.skillsWanted]);
-
-  const value = {
-    // State
+  const value = useMemo(() => ({
     userProfile,
     matches,
     potentialMatches,
@@ -359,36 +446,54 @@ export const SkillProvider = ({ children }) => {
     error,
     popularSkills,
     
-    // Methods
+    // Profile functions
     getUserProfile,
     updateUserProfile,
+    uploadProfilePhoto,
+    deleteProfilePhoto,
+    
+    // Skills functions
+    addSkill,
+    removeSkill,
+    
+    // Matching functions
     findMatches,
     sendMatchRequest,
     respondToMatch,
     getUserMatches,
+    
+    // Search functions
+    searchUsersBySkills,
+    searchUsersByLocation,
+    
+    // Rating functions
+    rateUser,
+    getUserStats,
+  }), [
+    userProfile,
+    matches,
+    potentialMatches,
+    loading,
+    error,
+    getUserProfile,
+    updateUserProfile,
+    uploadProfilePhoto,
+    deleteProfilePhoto,
     addSkill,
     removeSkill,
+    findMatches,
+    sendMatchRequest,
+    respondToMatch,
+    getUserMatches,
     searchUsersBySkills,
     searchUsersByLocation,
     rateUser,
     getUserStats,
-    
-    // Utility methods
-    clearError: () => setError(null),
-    refreshData: () => {
-      if (user?.userId) {
-        getUserProfile();
-        getUserMatches();
-        findMatches();
-      }
-    }
-  };
+  ]);
 
   return (
     <SkillContext.Provider value={value}>
       {children}
     </SkillContext.Provider>
   );
-};
-
-export default SkillContext; 
+}; 

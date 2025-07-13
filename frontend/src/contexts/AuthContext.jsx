@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { getCurrentUser, signIn, signUp, signOut as amplifySignOut, confirmSignUp, resendSignUpCode } from 'aws-amplify/auth';
 
 const AuthContext = createContext();
@@ -15,11 +15,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    checkAuthState();
-  }, []);
-
-  const checkAuthState = async () => {
+  const checkAuthState = useCallback(async () => {
     try {
       setLoading(true);
       const currentUser = await getCurrentUser();
@@ -30,9 +26,13 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const signInUser = async (email, password) => {
+  useEffect(() => {
+    checkAuthState();
+  }, [checkAuthState]);
+
+  const signInUser = useCallback(async (email, password) => {
     try {
       const result = await signIn({
         username: email,
@@ -78,9 +78,9 @@ export const AuthProvider = ({ children }) => {
       
       throw error;
     }
-  };
+  }, [checkAuthState]);
 
-  const signUpUser = async (email, password, firstName, lastName) => {
+  const signUpUser = useCallback(async (email, password, firstName, lastName) => {
     try {
       // Simple sign up - only email required for the new User Pool
       const result = await signUp({
@@ -102,9 +102,9 @@ export const AuthProvider = ({ children }) => {
       
       throw error;
     }
-  };
+  }, []);
 
-  const confirmSignUpUser = async (email, confirmationCode) => {
+  const confirmSignUpUser = useCallback(async (email, confirmationCode) => {
     try {
       const result = await confirmSignUp({
         username: email,
@@ -117,9 +117,9 @@ export const AuthProvider = ({ children }) => {
       console.error('Confirm sign up error:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const resendSignUpCodeUser = async (email) => {
+  const resendSignUpCodeUser = useCallback(async (email) => {
     try {
       const result = await resendSignUpCode({
         username: email
@@ -131,9 +131,9 @@ export const AuthProvider = ({ children }) => {
       console.error('Resend code error:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const signOutUser = async () => {
+  const signOutUser = useCallback(async () => {
     try {
       await amplifySignOut();
       setUser(null);
@@ -141,9 +141,9 @@ export const AuthProvider = ({ children }) => {
       console.error('Sign out error:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const value = {
+  const value = useMemo(() => ({
     user,
     loading,
     signIn: signInUser,
@@ -152,7 +152,7 @@ export const AuthProvider = ({ children }) => {
     confirmSignUp: confirmSignUpUser,
     resendSignUpCode: resendSignUpCodeUser,
     checkAuthState
-  };
+  }), [user, loading, signInUser, signUpUser, signOutUser, confirmSignUpUser, resendSignUpCodeUser, checkAuthState]);
 
   return (
     <AuthContext.Provider value={value}>
