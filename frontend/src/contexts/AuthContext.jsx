@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { getCurrentUser, signIn, signUp, signOut as amplifySignOut } from 'aws-amplify/auth';
+import { getCurrentUser, signIn, signUp, signOut as amplifySignOut, confirmSignUp, resendSignUpCode } from 'aws-amplify/auth';
 
 const AuthContext = createContext();
 
@@ -15,9 +15,6 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Development mode - bypass AWS for now
-  const isDevelopment = process.env.NODE_ENV === 'development';
-
   useEffect(() => {
     checkAuthState();
   }, []);
@@ -25,22 +22,6 @@ export const AuthProvider = ({ children }) => {
   const checkAuthState = async () => {
     try {
       setLoading(true);
-      
-      if (isDevelopment) {
-        // Mock user for development
-        const mockUser = {
-          username: 'demo@skillswap.com',
-          attributes: {
-            email: 'demo@skillswap.com',
-            name: 'Demo User',
-            sub: 'mock-user-id'
-          }
-        };
-        setUser(mockUser);
-        setLoading(false);
-        return;
-      }
-
       const currentUser = await getCurrentUser();
       setUser(currentUser);
     } catch (error) {
@@ -53,76 +34,107 @@ export const AuthProvider = ({ children }) => {
 
   const signInUser = async (email, password) => {
     try {
-      if (isDevelopment) {
-        // Mock sign in for development
-        const mockUser = {
-          username: email,
-          attributes: {
-            email: email,
-            name: 'Demo User',
-            sub: 'mock-user-id'
-          }
-        };
-        setUser(mockUser);
-        return mockUser;
-      }
-
       const result = await signIn({
         username: email,
         password: password
       });
       
+      console.log('Sign in result:', result);
+      
       if (result.isSignedIn) {
         await checkAuthState();
+        return result;
+      }
+      
+      // Handle different sign-in states
+      if (result.nextStep) {
+        console.log('Next step required:', result.nextStep);
+        
+        if (result.nextStep.signInStep === 'CONFIRM_SIGN_UP') {
+          throw new Error('Please verify your email address first. Check your email for the verification code.');
+        }
+        
+        if (result.nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
+          throw new Error('New password required. Please contact support.');
+        }
       }
       
       return result;
     } catch (error) {
       console.error('Sign in error:', error);
+      
+      // Handle specific error types
+      if (error.name === 'UserNotConfirmedException') {
+        throw new Error('Please verify your email address first. Check your email for the verification code.');
+      }
+      
+      if (error.name === 'NotAuthorizedException') {
+        throw new Error('Invalid email or password. Please try again.');
+      }
+      
+      if (error.name === 'UserNotFoundException') {
+        throw new Error('No account found with this email address.');
+      }
+      
       throw error;
     }
   };
 
-  const signUpUser = async (email, password, name) => {
+  const signUpUser = async (email, password, firstName, lastName) => {
     try {
-      if (isDevelopment) {
-        // Mock sign up for development
-        const mockUser = {
-          username: email,
-          attributes: {
-            email: email,
-            name: name,
-            sub: 'mock-user-id'
-          }
-        };
-        setUser(mockUser);
-        return mockUser;
-      }
-
+      // Simple sign up - only email required for the new User Pool
       const result = await signUp({
         username: email,
         password: password,
         attributes: {
-          email: email,
-          name: name
+          email: email
         }
       });
       
+      console.log('Sign up result:', result);
       return result;
     } catch (error) {
       console.error('Sign up error:', error);
+      
+      if (error.name === 'UsernameExistsException') {
+        throw new Error('An account with this email already exists. Please try signing in instead.');
+      }
+      
+      throw error;
+    }
+  };
+
+  const confirmSignUpUser = async (email, confirmationCode) => {
+    try {
+      const result = await confirmSignUp({
+        username: email,
+        confirmationCode: confirmationCode
+      });
+      
+      console.log('Confirm sign up result:', result);
+      return result;
+    } catch (error) {
+      console.error('Confirm sign up error:', error);
+      throw error;
+    }
+  };
+
+  const resendSignUpCodeUser = async (email) => {
+    try {
+      const result = await resendSignUpCode({
+        username: email
+      });
+      
+      console.log('Resend code result:', result);
+      return result;
+    } catch (error) {
+      console.error('Resend code error:', error);
       throw error;
     }
   };
 
   const signOutUser = async () => {
     try {
-      if (isDevelopment) {
-        // Mock sign out for development
-        setUser(null);
-        return;
-      }
-
       await amplifySignOut();
       setUser(null);
     } catch (error) {
@@ -137,6 +149,8 @@ export const AuthProvider = ({ children }) => {
     signIn: signInUser,
     signUp: signUpUser,
     signOut: signOutUser,
+    confirmSignUp: confirmSignUpUser,
+    resendSignUpCode: resendSignUpCodeUser,
     checkAuthState
   };
 

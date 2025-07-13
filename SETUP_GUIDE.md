@@ -12,8 +12,8 @@ This guide will help you set up all the necessary AWS services and database conf
 
 ### 1. **AWS Cognito Setup (Authentication)**
 
-#### Create User Pool:
-1. Go to AWS Console → Cognito → User Pools
+#### Create User PooAWS Consolel:
+1. Go to  → Cognito → User Pools
 2. Click "Create user pool"
 3. Configure sign-in options:
    - ✅ Email

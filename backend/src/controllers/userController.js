@@ -44,7 +44,14 @@ class UserController {
   // Get user profile
   async getUserProfile(req, res) {
     try {
-      const { userId } = req.params;
+      const userId = req.user?.userId || req.params.userId;
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          message: 'User ID is required'
+        });
+      }
+
       const user = await userService.getUserById(userId);
       
       if (!user) {
@@ -68,33 +75,6 @@ class UserController {
     }
   }
 
-  // Get current user profile (from authenticated user)
-  async getCurrentUser(req, res) {
-    try {
-      const userId = req.user.userId; // From JWT middleware
-      const user = await userService.getUserById(userId);
-      
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'User not found'
-        });
-      }
-
-      res.json({
-        success: true,
-        data: user
-      });
-    } catch (error) {
-      console.error('Error in getCurrentUser:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to get current user',
-        error: error.message
-      });
-    }
-  }
-
   // Update user profile
   async updateUserProfile(req, res) {
     try {
@@ -107,15 +87,13 @@ class UserController {
         });
       }
 
-      const { userId } = req.params;
+      const userId = req.user?.userId;
       const updates = req.body;
       
-      // Check if user exists
-      const existingUser = await userService.getUserById(userId);
-      if (!existingUser) {
-        return res.status(404).json({
+      if (!userId) {
+        return res.status(400).json({
           success: false,
-          message: 'User not found'
+          message: 'User ID is required'
         });
       }
 
@@ -136,60 +114,133 @@ class UserController {
     }
   }
 
-  // Get users by location
-  async getUsersByLocation(req, res) {
+  // Delete user profile
+  async deleteUserProfile(req, res) {
     try {
-      const { location } = req.query;
-      const limit = parseInt(req.query.limit) || 50;
+      const userId = req.user?.userId;
       
-      if (!location) {
+      if (!userId) {
         return res.status(400).json({
           success: false,
-          message: 'Location is required'
+          message: 'User ID is required'
         });
       }
 
-      const users = await userService.getUsersByLocation(location, limit);
+      await userService.deleteUser(userId);
       
       res.json({
         success: true,
-        data: users
+        message: 'User profile deleted successfully'
       });
     } catch (error) {
-      console.error('Error in getUsersByLocation:', error);
+      console.error('Error in deleteUserProfile:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to get users by location',
+        message: 'Failed to delete user profile',
         error: error.message
       });
     }
   }
 
-  // Search users by skills
-  async searchUsersBySkills(req, res) {
+  // Search users
+  async searchUsers(req, res) {
     try {
-      const { skills } = req.query;
-      const excludeUserId = req.query.excludeUserId;
+      const { q, skills, location, limit = 20 } = req.query;
       
-      if (!skills) {
-        return res.status(400).json({
-          success: false,
-          message: 'Skills parameter is required'
-        });
+      let users = [];
+      
+      if (skills) {
+        const skillsArray = Array.isArray(skills) ? skills : [skills];
+        users = await userService.searchUsersBySkills(skillsArray);
+      } else if (location) {
+        users = await userService.getUsersByLocation(location, parseInt(limit));
+      } else if (q) {
+        // General search by name or email
+        users = await userService.searchUsers(q, parseInt(limit));
+      } else {
+        users = await userService.getAllUsers(parseInt(limit));
       }
-
-      const skillsArray = Array.isArray(skills) ? skills : [skills];
-      const users = await userService.searchUsersBySkills(skillsArray, excludeUserId);
       
       res.json({
         success: true,
         data: users
       });
     } catch (error) {
-      console.error('Error in searchUsersBySkills:', error);
+      console.error('Error in searchUsers:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to search users by skills',
+        message: 'Failed to search users',
+        error: error.message
+      });
+    }
+  }
+
+  // Get popular skills
+  async getPopularSkills(req, res) {
+    try {
+      const limit = parseInt(req.query.limit) || 10;
+      
+      // Mock popular skills for now
+      const popularSkills = [
+        { name: 'JavaScript', count: 150 },
+        { name: 'Python', count: 120 },
+        { name: 'React', count: 100 },
+        { name: 'Node.js', count: 80 },
+        { name: 'Design', count: 75 },
+        { name: 'Marketing', count: 60 },
+        { name: 'Photography', count: 45 },
+        { name: 'Writing', count: 40 },
+        { name: 'Music', count: 35 },
+        { name: 'Cooking', count: 30 }
+      ].slice(0, limit);
+      
+      res.json({
+        success: true,
+        data: popularSkills
+      });
+    } catch (error) {
+      console.error('Error in getPopularSkills:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get popular skills',
+        error: error.message
+      });
+    }
+  }
+
+  // Get user skills
+  async getUserSkills(req, res) {
+    try {
+      const userId = req.user?.userId;
+      
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          message: 'User ID is required'
+        });
+      }
+
+      const user = await userService.getUserById(userId);
+      
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        data: {
+          skillsOffered: user.skillsOffered || [],
+          skillsWanted: user.skillsWanted || []
+        }
+      });
+    } catch (error) {
+      console.error('Error in getUserSkills:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get user skills',
         error: error.message
       });
     }
@@ -198,9 +249,16 @@ class UserController {
   // Add skill to user
   async addSkill(req, res) {
     try {
-      const { userId } = req.params;
+      const userId = req.user?.userId;
       const { skill, type = 'offered' } = req.body;
       
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          message: 'User ID is required'
+        });
+      }
+
       if (!skill) {
         return res.status(400).json({
           success: false,
@@ -235,17 +293,25 @@ class UserController {
   // Remove skill from user
   async removeSkill(req, res) {
     try {
-      const { userId } = req.params;
-      const { skill, type = 'offered' } = req.body;
+      const userId = req.user?.userId;
+      const { skillId } = req.params;
+      const { type = 'offered' } = req.body;
       
-      if (!skill) {
+      if (!userId) {
         return res.status(400).json({
           success: false,
-          message: 'Skill is required'
+          message: 'User ID is required'
         });
       }
 
-      const updatedUser = await userService.removeSkill(userId, skill, type);
+      if (!skillId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Skill ID is required'
+        });
+      }
+
+      const updatedUser = await userService.removeSkill(userId, skillId, type);
       
       res.json({
         success: true,
@@ -262,102 +328,73 @@ class UserController {
     }
   }
 
-  // Get potential matches for user
-  async getPotentialMatches(req, res) {
+  // Get user preferences
+  async getUserPreferences(req, res) {
     try {
-      const { userId } = req.params;
-      const limit = parseInt(req.query.limit) || 20;
+      const userId = req.user?.userId;
       
-      const matches = await userService.findPotentialMatches(userId, limit);
-      
-      res.json({
-        success: true,
-        data: matches
-      });
-    } catch (error) {
-      console.error('Error in getPotentialMatches:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to get potential matches',
-        error: error.message
-      });
-    }
-  }
-
-  // Update user rating
-  async updateUserRating(req, res) {
-    try {
-      const { userId } = req.params;
-      const { rating } = req.body;
-      
-      if (!rating || rating < 1 || rating > 5) {
+      if (!userId) {
         return res.status(400).json({
           success: false,
-          message: 'Rating must be between 1 and 5'
+          message: 'User ID is required'
         });
       }
 
-      const updatedUser = await userService.updateUserRating(userId, rating);
+      const user = await userService.getUserById(userId);
       
-      res.json({
-        success: true,
-        message: 'User rating updated successfully',
-        data: updatedUser
-      });
-    } catch (error) {
-      console.error('Error in updateUserRating:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to update user rating',
-        error: error.message
-      });
-    }
-  }
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
 
-  // Get all users (with pagination)
-  async getAllUsers(req, res) {
-    try {
-      const limit = parseInt(req.query.limit) || 50;
-      const lastEvaluatedKey = req.query.lastEvaluatedKey ? 
-        JSON.parse(req.query.lastEvaluatedKey) : null;
-      
-      const result = await userService.getAllUsers(limit, lastEvaluatedKey);
-      
       res.json({
         success: true,
-        data: result.users,
-        pagination: {
-          lastEvaluatedKey: result.lastEvaluatedKey,
-          hasMore: !!result.lastEvaluatedKey
+        data: {
+          preferences: user.preferences || {},
+          notifications: user.notifications || {}
         }
       });
     } catch (error) {
-      console.error('Error in getAllUsers:', error);
+      console.error('Error in getUserPreferences:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to get all users',
+        message: 'Failed to get user preferences',
         error: error.message
       });
     }
   }
 
-  // Delete user
-  async deleteUser(req, res) {
+  // Update user preferences
+  async updateUserPreferences(req, res) {
     try {
-      const { userId } = req.params;
+      const userId = req.user?.userId;
+      const { preferences, notifications } = req.body;
       
-      const user = await userService.deleteUser(userId);
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          message: 'User ID is required'
+        });
+      }
+
+      const updates = {};
+      if (preferences) updates.preferences = preferences;
+      if (notifications) updates.notifications = notifications;
+
+      const updatedUser = await userService.updateUser(userId, updates);
       
       res.json({
         success: true,
-        message: 'User deleted successfully',
-        data: user
+        message: 'User preferences updated successfully',
+        data: updatedUser
       });
     } catch (error) {
-      console.error('Error in deleteUser:', error);
+      console.error('Error in updateUserPreferences:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to delete user',
+        message: 'Failed to update user preferences',
         error: error.message
       });
     }
@@ -366,8 +403,15 @@ class UserController {
   // Get user statistics
   async getUserStats(req, res) {
     try {
-      const { userId } = req.params;
+      const userId = req.user?.userId;
       
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          message: 'User ID is required'
+        });
+      }
+
       const user = await userService.getUserById(userId);
       if (!user) {
         return res.status(404).json({
@@ -394,6 +438,204 @@ class UserController {
       res.status(500).json({
         success: false,
         message: 'Failed to get user stats',
+        error: error.message
+      });
+    }
+  }
+
+  // Get user ratings
+  async getUserRatings(req, res) {
+    try {
+      const userId = req.user?.userId;
+      
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          message: 'User ID is required'
+        });
+      }
+
+      // Mock ratings for now
+      const ratings = [
+        {
+          id: '1',
+          fromUserId: 'user2',
+          fromUserName: 'John Doe',
+          rating: 5,
+          comment: 'Great teacher, very patient!',
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: '2',
+          fromUserId: 'user3',
+          fromUserName: 'Jane Smith',
+          rating: 4,
+          comment: 'Learned a lot about React.',
+          createdAt: new Date().toISOString()
+        }
+      ];
+
+      res.json({
+        success: true,
+        data: ratings
+      });
+    } catch (error) {
+      console.error('Error in getUserRatings:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get user ratings',
+        error: error.message
+      });
+    }
+  }
+
+  // Rate user
+  async rateUser(req, res) {
+    try {
+      const { userId } = req.params;
+      const raterId = req.user?.userId;
+      const { rating, comment } = req.body;
+      
+      if (!raterId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Rater ID is required'
+        });
+      }
+
+      if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({
+          success: false,
+          message: 'Rating must be between 1 and 5'
+        });
+      }
+
+      // Mock rating creation for now
+      const newRating = {
+        id: Date.now().toString(),
+        fromUserId: raterId,
+        toUserId: userId,
+        rating: rating,
+        comment: comment || '',
+        createdAt: new Date().toISOString()
+      };
+
+      res.json({
+        success: true,
+        message: 'User rated successfully',
+        data: newRating
+      });
+    } catch (error) {
+      console.error('Error in rateUser:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to rate user',
+        error: error.message
+      });
+    }
+  }
+
+  // Block user
+  async blockUser(req, res) {
+    try {
+      const { userId } = req.params;
+      const blockerId = req.user?.userId;
+      
+      if (!blockerId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Blocker ID is required'
+        });
+      }
+
+      // Mock blocking for now
+      res.json({
+        success: true,
+        message: 'User blocked successfully'
+      });
+    } catch (error) {
+      console.error('Error in blockUser:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to block user',
+        error: error.message
+      });
+    }
+  }
+
+  // Report user
+  async reportUser(req, res) {
+    try {
+      const { userId } = req.params;
+      const reporterId = req.user?.userId;
+      const { reason, description } = req.body;
+      
+      if (!reporterId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Reporter ID is required'
+        });
+      }
+
+      if (!reason) {
+        return res.status(400).json({
+          success: false,
+          message: 'Reason is required'
+        });
+      }
+
+      // Mock reporting for now
+      res.json({
+        success: true,
+        message: 'User reported successfully'
+      });
+    } catch (error) {
+      console.error('Error in reportUser:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to report user',
+        error: error.message
+      });
+    }
+  }
+
+  // Get user activity
+  async getUserActivity(req, res) {
+    try {
+      const userId = req.user?.userId;
+      
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          message: 'User ID is required'
+        });
+      }
+
+      // Mock activity for now
+      const activity = [
+        {
+          id: '1',
+          type: 'skill_exchange',
+          description: 'Completed JavaScript lesson with John Doe',
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: '2',
+          type: 'rating_received',
+          description: 'Received 5-star rating from Jane Smith',
+          createdAt: new Date().toISOString()
+        }
+      ];
+
+      res.json({
+        success: true,
+        data: activity
+      });
+    } catch (error) {
+      console.error('Error in getUserActivity:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get user activity',
         error: error.message
       });
     }
