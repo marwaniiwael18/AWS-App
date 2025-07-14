@@ -13,9 +13,13 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
+      // Show loading state could be added here if needed
       await signOut();
+      // The signOut function now handles the redirect
     } catch (error) {
       console.error('Error signing out:', error);
+      // Still redirect even if there's an error
+      window.location.href = '/';
     }
   };
 
@@ -87,7 +91,7 @@ const Navbar = () => {
                       <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-primary flex items-center justify-center">
                         {userPhoto ? (
                           <img
-                            src={`http://localhost:3000${userPhoto}`}
+                            src={userPhoto.startsWith('http') ? userPhoto : `http://localhost:3000${userPhoto}`}
                             alt={userDisplayName}
                             className="w-full h-full object-cover"
                             onError={(e) => {
@@ -182,7 +186,7 @@ const Navbar = () => {
                     <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-primary flex items-center justify-center">
                       {userPhoto ? (
                         <img
-                          src={`http://localhost:3000${userPhoto}`}
+                          src={userPhoto.startsWith('http') ? userPhoto : `http://localhost:3000${userPhoto}`}
                           alt={userDisplayName}
                           className="w-full h-full object-cover"
                           onError={(e) => {

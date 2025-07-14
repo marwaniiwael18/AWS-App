@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Amplify } from 'aws-amplify';
 import '@aws-amplify/ui-react/styles.css';
 
@@ -41,8 +41,12 @@ const ProtectedRoute = ({ children }) => {
     );
   }
   
-  if (!user) {
-    return <Home />;
+  // Check if user was manually signed out
+  const wasSignedOut = localStorage.getItem('manualSignOut') === 'true';
+  
+  if (!user || wasSignedOut) {
+    // Don't clear the signout flag here - keep it to prevent re-authentication
+    return <Navigate to="/" replace />;
   }
   
   return children;

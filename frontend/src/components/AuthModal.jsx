@@ -18,7 +18,7 @@ const AuthModal = ({ isOpen, onClose }) => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { signIn, signUp, confirmSignUp, resendSignUpCode } = useAuth();
+  const { signIn, signUp, confirmSignUp, resendSignUpCode, clearSignOut } = useAuth();
 
   const handleInputChange = (e) => {
     setFormData({
@@ -66,6 +66,7 @@ const AuthModal = ({ isOpen, onClose }) => {
         }
       } else {
         // Handle sign in
+        clearSignOut(); // Clear any manual signout flag
         await signIn(formData.email, formData.password);
         setSuccess('Welcome back! Redirecting...');
         setTimeout(() => {

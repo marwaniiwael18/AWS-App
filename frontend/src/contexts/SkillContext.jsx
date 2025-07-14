@@ -432,9 +432,11 @@ export const SkillProvider = ({ children }) => {
     if (user) {
       getUserProfile();
     } else {
+      // Clear all user-related data when user is null
       setUserProfile(null);
       setMatches([]);
       setPotentialMatches([]);
+      setError(null);
     }
   }, [user, getUserProfile]);
 

@@ -20,7 +20,17 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       
-      // Development bypass mode
+      // Check if user was manually signed out (even in dev mode)
+      const wasSignedOut = localStorage.getItem('manualSignOut') === 'true';
+      if (wasSignedOut) {
+        console.log('🚫 User was manually signed out - staying logged out');
+        setUser(null);
+        removeAuthToken();
+        // Don't remove the flag here - keep it to prevent re-authentication
+        return;
+      }
+      
+      // Development bypass mode (only if not manually signed out)
       if (import.meta.env.DEV && import.meta.env.VITE_BYPASS_AUTH === 'true') {
         const mockUser = {
           userId: 'dev-user-123',
@@ -33,7 +43,7 @@ export const AuthProvider = ({ children }) => {
         };
         setUser(mockUser);
         setAuthToken('dev-mock-token');
-        console.log('Development bypass mode: Mock user authenticated');
+        console.log('🔧 Development bypass mode: Mock user authenticated');
         return;
       }
       
@@ -76,6 +86,8 @@ export const AuthProvider = ({ children }) => {
       console.log('Sign in result:', result);
       
       if (result.isSignedIn) {
+        // Clear manual signout flag when successfully signing in
+        localStorage.removeItem('manualSignOut');
         await checkAuthState();
         return result;
       }
@@ -169,13 +181,43 @@ export const AuthProvider = ({ children }) => {
 
   const signOutUser = useCallback(async () => {
     try {
-      await amplifySignOut();
+      // Mark that user manually signed out (important for dev bypass mode)
+      localStorage.setItem('manualSignOut', 'true');
+      
+      // Try to sign out from Amplify (might fail in dev mode)
+      try {
+        await amplifySignOut();
+      } catch (amplifyError) {
+        console.log('Amplify sign out not needed in dev mode:', amplifyError.message);
+      }
+      
       setUser(null);
       removeAuthToken();
+      
+      // Clear any stored user data
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      
+      console.log('✅ User signed out successfully - redirecting to home');
+      
+      // Force redirect to home page
+      window.location.href = '/';
     } catch (error) {
       console.error('Sign out error:', error);
+      // Even if there's an error, clear local state and redirect
+      localStorage.setItem('manualSignOut', 'true');
+      setUser(null);
+      removeAuthToken();
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      window.location.href = '/';
       throw error;
     }
+  }, []);
+
+  // Function to clear manual signout (for sign in)
+  const clearSignOut = useCallback(() => {
+    localStorage.removeItem('manualSignOut');
   }, []);
 
   const value = useMemo(() => ({
@@ -186,8 +228,9 @@ export const AuthProvider = ({ children }) => {
     signOut: signOutUser,
     confirmSignUp: confirmSignUpUser,
     resendSignUpCode: resendSignUpCodeUser,
-    checkAuthState
-  }), [user, loading, signInUser, signUpUser, signOutUser, confirmSignUpUser, resendSignUpCodeUser, checkAuthState]);
+    checkAuthState,
+    clearSignOut
+  }), [user, loading, signInUser, signUpUser, signOutUser, confirmSignUpUser, resendSignUpCodeUser, checkAuthState, clearSignOut]);
 
   return (
     <AuthContext.Provider value={value}>
