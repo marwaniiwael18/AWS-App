@@ -318,29 +318,53 @@ jobs:
         echo "🔍 Checking S3 bucket: $BUCKET_NAME"
         
         # Check if bucket exists
-        if aws s3 ls "s3://$BUCKET_NAME" --region eu-north-1 2>/dev/null; then
+        if aws s3api head-bucket --bucket "$BUCKET_NAME" --region eu-north-1 2>/dev/null; then
           echo "✅ Bucket exists"
           echo "📁 Bucket contents:"
-          aws s3 ls "s3://$BUCKET_NAME/" --region eu-north-1
+          aws s3 ls "s3://$BUCKET_NAME/" --region eu-north-1 || echo "Empty bucket"
           
           # Check website configuration
           echo "🌐 Website configuration:"
-          aws s3api get-bucket-website --bucket "$BUCKET_NAME" --region eu-north-1 || echo "❌ No website config"
+          aws s3api get-bucket-website --bucket "$BUCKET_NAME" --region eu-north-1 2>/dev/null || {
+            echo "❌ No website config found - configuring now..."
+            aws s3 website "s3://$BUCKET_NAME" --index-document index.html --error-document index.html --region eu-north-1
+            echo "✅ Website hosting enabled"
+          }
           
           # Check bucket policy
-          echo "🔓 Bucket policy:"
-          aws s3api get-bucket-policy --bucket "$BUCKET_NAME" --region eu-north-1 || echo "❌ No bucket policy"
+          echo "🔓 Bucket policy check:"
+          aws s3api get-bucket-policy --bucket "$BUCKET_NAME" --region eu-north-1 2>/dev/null || {
+            echo "❌ No bucket policy found - setting now..."
+            echo '{
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "PublicReadGetObject",
+                  "Effect": "Allow",
+                  "Principal": "*",
+                  "Action": "s3:GetObject",
+                  "Resource": "arn:aws:s3:::'"$BUCKET_NAME"'/*"
+                }
+              ]
+            }' > bucket-policy.json
+            
+            aws s3api put-bucket-policy --bucket "$BUCKET_NAME" --policy file://bucket-policy.json --region eu-north-1
+            rm bucket-policy.json
+            echo "✅ Bucket policy set"
+          }
         else
           echo "❌ Bucket does not exist"
-          echo "🔧 Creating bucket and deploying frontend..."
+          echo "🔧 Creating bucket and configuring..."
           
           # Create bucket
           aws s3 mb "s3://$BUCKET_NAME" --region eu-north-1
+          echo "✅ Bucket created"
           
           # Configure website hosting
           aws s3 website "s3://$BUCKET_NAME" --index-document index.html --error-document index.html --region eu-north-1
+          echo "✅ Website hosting enabled"
           
-          # Set bucket policy
+          # Set bucket policy for public access
           echo '{
             "Version": "2012-10-17",
             "Statement": [
@@ -356,9 +380,17 @@ jobs:
           
           aws s3api put-bucket-policy --bucket "$BUCKET_NAME" --policy file://bucket-policy.json --region eu-north-1
           rm bucket-policy.json
+          echo "✅ Bucket policy set"
           
-          echo "✅ Bucket created and configured"
+          # Disable block public access (required for website hosting)
+          aws s3api put-public-access-block --bucket "$BUCKET_NAME" --region eu-north-1 --public-access-block-configuration BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false
+          echo "✅ Public access enabled"
         fi
+        
+        # Verify final configuration
+        echo "🔍 Final verification:"
+        aws s3api get-bucket-website --bucket "$BUCKET_NAME" --region eu-north-1
+        echo "🌐 Website URL should be: http://$BUCKET_NAME.s3-website-eu-north-1.amazonaws.com"
         
     - name: 🏗️ Build and Deploy Frontend 
       working-directory: ./frontend
@@ -403,11 +435,14 @@ jobs:
       env:
         STAGE: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
       run: |
-        FRONTEND_URL="http://skillswap-frontend-${STAGE}.s3-website-eu-north-1.amazonaws.com"
+        BUCKET_NAME="skillswap-frontend-${STAGE}"
+        FRONTEND_URL="http://$BUCKET_NAME.s3-website-eu-north-1.amazonaws.com"
+        
         echo "🔍 Testing frontend at: $FRONTEND_URL"
         
-        # Wait for S3 website to be ready
-        sleep 20
+        # Wait for DNS propagation and S3 website to be ready
+        echo "⏳ Waiting for DNS propagation and S3 website setup..."
+        sleep 30
         
         # Test frontend accessibility
         response=$(curl -s -o /dev/null -w "%{http_code}" "$FRONTEND_URL" || echo "000")
@@ -419,11 +454,48 @@ jobs:
           echo "❌ Frontend health check failed with status: $response"
           echo "🔍 Trying to diagnose the issue..."
           
-          # Try to get more info
+          # Try alternative URL formats
+          ALT_URL="http://$BUCKET_NAME.s3-website.eu-north-1.amazonaws.com"
+          echo "🔄 Trying alternative URL: $ALT_URL"
+          alt_response=$(curl -s -o /dev/null -w "%{http_code}" "$ALT_URL" || echo "000")
+          
+          if [ "$alt_response" = "200" ]; then
+            echo "✅ Frontend accessible via alternative URL: $ALT_URL"
+            exit 0
+          fi
+          
+          # Try direct S3 object access
+          DIRECT_URL="https://$BUCKET_NAME.s3.eu-north-1.amazonaws.com/index.html"
+          echo "🔄 Trying direct S3 access: $DIRECT_URL"
+          direct_response=$(curl -s -o /dev/null -w "%{http_code}" "$DIRECT_URL" || echo "000")
+          echo "Direct S3 response: $direct_response"
+          
+          # Check if files exist in bucket
+          echo "📁 Checking bucket contents:"
+          aws s3 ls "s3://$BUCKET_NAME/" --region eu-north-1
+          
+          # Check website configuration again
+          echo "🌐 Current website configuration:"
+          aws s3api get-bucket-website --bucket "$BUCKET_NAME" --region eu-north-1 || echo "No website config"
+          
+          # Try to get more info with verbose curl
+          echo "🔍 Verbose curl output:"
           curl -v "$FRONTEND_URL" || true
           
           # Check DNS resolution
-          nslookup "skillswap-frontend-${STAGE}.s3-website-eu-north-1.amazonaws.com" || true
+          echo "🔍 DNS resolution test:"
+          nslookup "$BUCKET_NAME.s3-website-eu-north-1.amazonaws.com" || true
+          
+          if [ "$direct_response" = "200" ]; then
+            echo "⚠️ Files are accessible directly but website hosting might need more time"
+            echo "🔄 Trying one more time after additional wait..."
+            sleep 30
+            final_response=$(curl -s -o /dev/null -w "%{http_code}" "$FRONTEND_URL" || echo "000")
+            if [ "$final_response" = "200" ]; then
+              echo "✅ Frontend now accessible after extended wait"
+              exit 0
+            fi
+          fi
           
           exit 1
         fi 
