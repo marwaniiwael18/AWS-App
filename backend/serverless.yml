@@ -6,6 +6,9 @@
 service: skillswap-backend
 frameworkVersion: '4'
 
+# Enable built-in dotenv support
+useDotenv: true
+
 provider:
   name: aws
   runtime: nodejs18.x
@@ -331,7 +334,6 @@ resources:
 
 plugins:
   - serverless-offline
-  - serverless-dotenv-plugin
 
 # ========================================
 # 📁 Package Configuration
