@@ -298,6 +298,37 @@ resources:
                   - "${BucketArn}/profiles/*"
                   - BucketArn: !GetAtt FilesBucket.Arn
 
+    # S3 Bucket for Frontend Static Website Hosting
+    FrontendBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: skillswap-frontend-${self:provider.stage}
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: index.html
+
+    # S3 Bucket Policy for Frontend Public Access
+    FrontendBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref FrontendBucket
+        PolicyDocument:
+          Statement:
+            - Sid: PublicReadGetObject
+              Effect: Allow
+              Principal: "*"
+              Action:
+                - s3:GetObject
+              Resource:
+                - !Sub 
+                  - "${BucketArn}/*"
+                  - BucketArn: !GetAtt FrontendBucket.Arn
+
 # ========================================
 # 📤 Outputs
 # ========================================
@@ -328,6 +359,13 @@ resources:
             - ${self:provider.region}
             - ".amazonaws.com/"
             - ${self:provider.stage}
+
+    FrontendUrl:
+      Description: "Frontend S3 Website URL"
+      Value:
+        Fn::GetAtt:
+          - FrontendBucket
+          - WebsiteURL
 
 # ========================================
 # 🔌 Plugins
