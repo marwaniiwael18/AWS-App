@@ -63,7 +63,7 @@
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",
     "serverless": "^4.4.0",
-    "serverless-offline": "^13.8.1",
+    "serverless-offline": "^14.4.0",
     "supertest": "^6.3.3"
   },
   "engines": {
