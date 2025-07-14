@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { authenticate, optionalAuth } = require('../middleware/authMiddleware');
+const { authMiddleware: authenticate, optionalAuthMiddleware: optionalAuth } = require('../middleware/auth-v3');
 const UserController = require('../controllers/userController');
 
 // Configure multer for file uploads

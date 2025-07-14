@@ -2,27 +2,27 @@
 // const AWS = require('aws-sdk');
 require('dotenv').config();
 
-// Configure AWS SDK
 // AWS.config.update({
 //   region: process.env.AWS_REGION || 'us-east-1',
 //   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
 //   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+//   sessionToken: process.env.AWS_SESSION_TOKEN, // For temporary credentials
 // });
 
-// DynamoDB Configuration
-const dynamoDb = new AWS.DynamoDB.DocumentClient({
-  region: process.env.AWS_REGION || 'us-east-1',
-});
+// DynamoDB Configuration - LEGACY - use aws-v3.js instead
+// const dynamoDb = new AWS.DynamoDB.DocumentClient({
+//   region: process.env.AWS_REGION || 'us-east-1',
+// });
 
-// Cognito Configuration
-const cognito = new AWS.CognitoIdentityServiceProvider({
-  region: process.env.AWS_REGION || 'us-east-1',
-});
+// Cognito Configuration - LEGACY
+// const cognito = new AWS.CognitoIdentityServiceProvider({
+//   region: process.env.AWS_REGION || 'us-east-1',
+// });
 
-// S3 Configuration (for file uploads)
-const s3 = new AWS.S3({
-  region: process.env.AWS_REGION || 'us-east-1',
-});
+// S3 Configuration (for file uploads) - LEGACY
+// const s3 = new AWS.S3({
+//   region: process.env.AWS_REGION || 'us-east-1',
+// });
 
 // DynamoDB Table Names
 const TABLES = {
@@ -46,10 +46,11 @@ const S3_CONFIG = {
 };
 
 module.exports = {
-  AWS,
-  dynamoDb,
-  cognito,
-  s3,
+  // Legacy exports - use aws-v3.js for new development
+  // AWS,
+  // dynamoDb,
+  // cognito,
+  // s3,
   TABLES,
   COGNITO_CONFIG,
   S3_CONFIG,

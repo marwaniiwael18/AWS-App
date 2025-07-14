@@ -1,10 +1,11 @@
 const jwt = require('jsonwebtoken');
 // Legacy auth middleware - use auth-v3.js for new development
 
-// Configure AWS Cognito
-const cognito = new AWS.CognitoIdentityServiceProvider({
-  region: process.env.AWS_REGION || 'us-east-1'
-});
+// Configure AWS Cognito - LEGACY CODE - Use auth-v3.js instead
+// const AWS = require('aws-sdk');
+// const cognito = new AWS.CognitoIdentityServiceProvider({
+//   region: process.env.AWS_REGION || 'us-east-1'
+// });
 
 // Mock JWT secret for development (in production, use proper AWS Cognito verification)
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';

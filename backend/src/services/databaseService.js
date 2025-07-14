@@ -11,9 +11,11 @@ class DatabaseService {
   initializeDatabase() {
     switch (this.dbType) {
       case 'dynamodb':
-        this.dynamodb = new AWS.DynamoDB.DocumentClient({
-          region: process.env.AWS_REGION || 'us-east-1'
-        });
+        // Legacy code - use userService-v3.js instead
+        // this.dynamodb = new AWS.DynamoDB.DocumentClient({
+        //   region: process.env.AWS_REGION || 'us-east-1'
+        // });
+        console.log('⚠️  Legacy DynamoDB service - Use userService-v3.js for AWS SDK v3');
         break;
       
       case 'mongodb':

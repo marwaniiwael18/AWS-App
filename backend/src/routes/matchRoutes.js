@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../middleware/authMiddleware');
+const { authMiddleware: authenticate } = require('../middleware/auth-v3');
 const MatchController = require('../controllers/matchController');
 
 // All routes require authentication
