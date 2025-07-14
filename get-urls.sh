@@ -14,7 +14,7 @@ echo ""
 
 # Frontend Website
 echo "🌐 Frontend Website:"
-echo "   http://skillswap-frontend-prod.s3-website-eu-north-1.amazonaws.com"
+echo "   http://skillswap-frontend-prod.s3-website.eu-north-1.amazonaws.com"
 echo ""
 
 # Test status
@@ -27,7 +27,7 @@ else
 fi
 
 echo -n "   Frontend: "
-if curl -s "http://skillswap-frontend-prod.s3-website-eu-north-1.amazonaws.com" > /dev/null 2>&1; then
+if curl -s "http://skillswap-frontend-prod.s3-website.eu-north-1.amazonaws.com" > /dev/null 2>&1; then
     echo "✅ Online"
 else
     echo "❌ Offline (S3 website hosting issue)"

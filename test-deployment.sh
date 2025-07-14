@@ -24,7 +24,7 @@ echo ""
 
 # Test Frontend
 echo "🌐 Testing Frontend Website..."
-FRONTEND_URL="http://skillswap-frontend-prod.s3-website-eu-north-1.amazonaws.com"
+FRONTEND_URL="http://skillswap-frontend-prod.s3-website.eu-north-1.amazonaws.com"
 frontend_response=$(curl -s -o /dev/null -w "%{http_code}" "$FRONTEND_URL" || echo "000")
 
 if [ "$frontend_response" = "200" ]; then
