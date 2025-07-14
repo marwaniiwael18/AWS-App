@@ -1,8 +1,8 @@
 # 🚀 SkillSwap - Professional Skill Exchange Platform
 
 A modern, full-stack web application that connects professionals to exchange skills and knowledge. Built with React, Node.js, and AWS services.
+<img width="1440" height="900" alt="Screenshot 2025-07-14 at 12 52 09" src="https://github.com/user-attachments/assets/4f6448e9-b20c-4d68-b6a1-a80d48ad6950" />
 
-![SkillSwap Demo](https://via.placeholder.com/800x400?text=SkillSwap+Demo)
 
 ## ✨ Features
 
