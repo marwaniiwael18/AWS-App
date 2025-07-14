@@ -284,9 +284,14 @@ jobs:
         fi
         
     - name: 🧪 Test Frontend Deployment
+      env:
+        STAGE: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
       run: |
-        FRONTEND_URL="${{ secrets.FRONTEND_URL }}"
+        FRONTEND_URL="http://skillswap-frontend-${STAGE}.s3-website-eu-north-1.amazonaws.com"
         echo "🔍 Testing frontend at: $FRONTEND_URL"
+        
+        # Wait for S3 deployment to be ready
+        sleep 15
         
         # Test frontend accessibility
         response=$(curl -s -o /dev/null -w "%{http_code}" "$FRONTEND_URL" || echo "000")
@@ -310,10 +315,12 @@ jobs:
     steps:
     - name: 📢 Success Notification
       if: needs.smoke-tests.result == 'success'
+      env:
+        STAGE: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
       run: |
         echo "🎉 SkillSwap deployment successful!"
-        echo "🌐 Frontend: ${{ secrets.FRONTEND_URL }}"
-        echo "🔗 Backend API: ${{ secrets.VITE_API_URL }}"
+        echo "🌐 Frontend: http://skillswap-frontend-${STAGE}.s3-website-eu-north-1.amazonaws.com"
+        echo "🔗 Backend API: https://jm11mtpkb9.execute-api.eu-north-1.amazonaws.com/prod"
         echo "🚀 Environment: ${{ github.event.inputs.environment || 'prod' }}"
         
     - name: 📢 Failure Notification
