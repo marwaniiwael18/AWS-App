@@ -4,7 +4,7 @@
 # ========================================
 
 service: skillswap-backend
-frameworkVersion: '4'
+frameworkVersion: '3'
 
 # Enable built-in dotenv support
 useDotenv: true

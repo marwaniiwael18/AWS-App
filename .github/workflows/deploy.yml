@@ -158,7 +158,7 @@ jobs:
         aws-region: ${{ env.AWS_REGION }}
         
     - name: 📦 Install Serverless Framework
-      run: npm install -g serverless@^4.4.0
+      run: npm install -g serverless@^3.40.0
       
     - name: 📦 Install Backend Dependencies
       working-directory: ${{ env.BACKEND_DIR }}
