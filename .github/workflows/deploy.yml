@@ -267,7 +267,7 @@ jobs:
       
     - name: 🧪 Test Backend Health
       run: |
-        API_URL="${{ secrets.VITE_API_URL || env.API_ENDPOINT }}"
+        API_URL="https://jm11mtpkb9.execute-api.eu-north-1.amazonaws.com/prod"
         echo "🔍 Testing API health at: $API_URL"
         
         # Wait for deployment to be ready
