@@ -187,7 +187,7 @@ jobs:
       env:
         STAGE: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
       run: |
-        API_ENDPOINT=$(serverless info --stage $STAGE --region ${{ env.AWS_REGION }} | grep -o 'https://[^[:space:]]*')
+        API_ENDPOINT=$(serverless info --stage $STAGE --region ${{ env.AWS_REGION }} | grep -o 'https://[^[:space:]]*' | head -1 | sed 's/{proxy+}$//')
         echo "API_ENDPOINT=$API_ENDPOINT" >> $GITHUB_ENV
         echo "🌐 API deployed to: $API_ENDPOINT"
 
