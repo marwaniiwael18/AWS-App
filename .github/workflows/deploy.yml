@@ -248,11 +248,47 @@ jobs:
         echo "📁 Contents of dist directory:"
         ls -la dist/
         
+        # Check if S3 bucket exists and create if needed
+        BUCKET_NAME="skillswap-frontend-${STAGE}"
+        echo "🔍 Checking if bucket $BUCKET_NAME exists..."
+        
+        if ! aws s3 ls "s3://$BUCKET_NAME" --region eu-north-1 2>/dev/null; then
+          echo "❌ Bucket does not exist. Creating bucket..."
+          aws s3 mb "s3://$BUCKET_NAME" --region eu-north-1
+          
+          echo "🔧 Configuring bucket for static website hosting..."
+          aws s3 website "s3://$BUCKET_NAME" --index-document index.html --error-document index.html --region eu-north-1
+          
+          echo "🔓 Setting bucket policy for public read access..."
+          echo '{
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "PublicReadGetObject",
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": "s3:GetObject",
+                "Resource": "arn:aws:s3:::'"$BUCKET_NAME"'/*"
+              }
+            ]
+          }' > bucket-policy.json
+          
+          aws s3api put-bucket-policy --bucket "$BUCKET_NAME" --policy file://bucket-policy.json --region eu-north-1
+          rm bucket-policy.json
+        else
+          echo "✅ Bucket exists"
+        fi
+        
         # Deploy to S3 bucket
-        aws s3 sync dist/ s3://skillswap-frontend-${STAGE}/ --delete --region eu-north-1
+        echo "📤 Syncing files to S3..."
+        aws s3 sync dist/ "s3://$BUCKET_NAME/" --delete --region eu-north-1
         
         echo "✅ Frontend deployed to S3"
-        echo "🌐 Frontend URL: http://skillswap-frontend-${STAGE}.s3-website-eu-north-1.amazonaws.com"
+        echo "🌐 Frontend URL: http://$BUCKET_NAME.s3-website-eu-north-1.amazonaws.com"
+        
+        # Test the deployment
+        echo "🧪 Testing bucket accessibility..."
+        aws s3 ls "s3://$BUCKET_NAME/" --region eu-north-1
 
   # ========================================
   # 🧪 Post-Deployment Tests
