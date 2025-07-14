@@ -18,7 +18,6 @@ provider:
   # Environment Variables
   environment:
     NODE_ENV: ${self:provider.stage}
-    AWS_REGION: ${self:provider.region}
     
     # Cognito Configuration
     COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID, 'eu-north-1_tr3nTK4VG'}

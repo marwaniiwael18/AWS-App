@@ -168,7 +168,6 @@ jobs:
       working-directory: ${{ env.BACKEND_DIR }}
       run: |
         echo "NODE_ENV=production" > .env.production
-        echo "AWS_REGION=${{ env.AWS_REGION }}" >> .env.production
         echo "COGNITO_USER_POOL_ID=${{ secrets.COGNITO_USER_POOL_ID }}" >> .env.production
         echo "COGNITO_CLIENT_ID=${{ secrets.COGNITO_CLIENT_ID }}" >> .env.production
         echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env.production
