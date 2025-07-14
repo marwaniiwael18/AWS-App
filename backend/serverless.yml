@@ -294,7 +294,9 @@ resources:
               Action:
                 - s3:GetObject
               Resource:
-                - !Sub "${FilesBucket}/profiles/*"
+                - !Sub 
+                  - "${BucketArn}/profiles/*"
+                  - BucketArn: !GetAtt FilesBucket.Arn
 
 # ========================================
 # 📤 Outputs
