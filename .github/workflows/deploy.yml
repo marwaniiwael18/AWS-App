@@ -296,26 +296,98 @@ jobs:
   smoke-tests:
     name: 🧪 Smoke Tests
     runs-on: ubuntu-latest
-    needs: [deploy-backend, deploy-frontend]
+    needs: [deploy-backend]
     if: always() && (github.ref == 'refs/heads/main' || github.event.inputs.environment != '')
     
     steps:
     - name: 📥 Checkout Code
       uses: actions/checkout@v4
       
-    - name: 🔍 Check Job Results
+    - name: 🔐 Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+      
+    - name: 🔍 Debug Frontend S3 Bucket
+      env:
+        STAGE: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
       run: |
-        echo "Backend deployment result: ${{ needs.deploy-backend.result }}"
-        echo "Frontend deployment result: ${{ needs.deploy-frontend.result }}"
+        BUCKET_NAME="skillswap-frontend-${STAGE}"
+        echo "🔍 Checking S3 bucket: $BUCKET_NAME"
+        
+        # Check if bucket exists
+        if aws s3 ls "s3://$BUCKET_NAME" --region eu-north-1 2>/dev/null; then
+          echo "✅ Bucket exists"
+          echo "📁 Bucket contents:"
+          aws s3 ls "s3://$BUCKET_NAME/" --region eu-north-1
+          
+          # Check website configuration
+          echo "🌐 Website configuration:"
+          aws s3api get-bucket-website --bucket "$BUCKET_NAME" --region eu-north-1 || echo "❌ No website config"
+          
+          # Check bucket policy
+          echo "🔓 Bucket policy:"
+          aws s3api get-bucket-policy --bucket "$BUCKET_NAME" --region eu-north-1 || echo "❌ No bucket policy"
+        else
+          echo "❌ Bucket does not exist"
+          echo "🔧 Creating bucket and deploying frontend..."
+          
+          # Create bucket
+          aws s3 mb "s3://$BUCKET_NAME" --region eu-north-1
+          
+          # Configure website hosting
+          aws s3 website "s3://$BUCKET_NAME" --index-document index.html --error-document index.html --region eu-north-1
+          
+          # Set bucket policy
+          echo '{
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "PublicReadGetObject",
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": "s3:GetObject",
+                "Resource": "arn:aws:s3:::'"$BUCKET_NAME"'/*"
+              }
+            ]
+          }' > bucket-policy.json
+          
+          aws s3api put-bucket-policy --bucket "$BUCKET_NAME" --policy file://bucket-policy.json --region eu-north-1
+          rm bucket-policy.json
+          
+          echo "✅ Bucket created and configured"
+        fi
+        
+    - name: 🏗️ Build and Deploy Frontend 
+      working-directory: ./frontend
+      env:
+        VITE_API_URL: https://jm11mtpkb9.execute-api.eu-north-1.amazonaws.com/prod
+        VITE_BYPASS_AUTH: false
+        STAGE: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
+      run: |
+        echo "🏗️ Installing dependencies..."
+        npm ci
+        
+        echo "��️ Building frontend..."
+        npm run build
+        
+        echo "📁 Build output:"
+        ls -la dist/
+        
+        echo "📤 Deploying to S3..."
+        aws s3 sync dist/ "s3://skillswap-frontend-${STAGE}/" --delete --region eu-north-1
+        
+        echo "✅ Frontend deployed successfully"
         
     - name: 🧪 Test Backend Health
-      if: needs.deploy-backend.result == 'success'
       run: |
         API_URL="https://jm11mtpkb9.execute-api.eu-north-1.amazonaws.com/prod"
-        echo "🔍 Testing API health at: $API_URL"
+        echo "�� Testing API health at: $API_URL"
         
         # Wait for deployment to be ready
-        sleep 30
+        sleep 10
         
         # Test health endpoint
         response=$(curl -s -o /dev/null -w "%{http_code}" "$API_URL/health" || echo "000")
@@ -328,64 +400,30 @@ jobs:
         fi
         
     - name: 🧪 Test Frontend Deployment
-      if: needs.deploy-frontend.result == 'success'
       env:
         STAGE: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
       run: |
         FRONTEND_URL="http://skillswap-frontend-${STAGE}.s3-website-eu-north-1.amazonaws.com"
         echo "🔍 Testing frontend at: $FRONTEND_URL"
         
-        # Wait for S3 deployment to be ready
-        sleep 15
+        # Wait for S3 website to be ready
+        sleep 20
         
         # Test frontend accessibility
         response=$(curl -s -o /dev/null -w "%{http_code}" "$FRONTEND_URL" || echo "000")
         
         if [ "$response" = "200" ]; then
           echo "✅ Frontend health check passed"
+          echo "🌐 Frontend is live at: $FRONTEND_URL"
         else
           echo "❌ Frontend health check failed with status: $response"
+          echo "🔍 Trying to diagnose the issue..."
+          
+          # Try to get more info
+          curl -v "$FRONTEND_URL" || true
+          
+          # Check DNS resolution
+          nslookup "skillswap-frontend-${STAGE}.s3-website-eu-north-1.amazonaws.com" || true
+          
           exit 1
-        fi
-        
-    - name: 📊 Summary
-      run: |
-        echo "=== Deployment Summary ==="
-        if [ "${{ needs.deploy-backend.result }}" = "success" ]; then
-          echo "✅ Backend: Deployed successfully"
-        else
-          echo "❌ Backend: Failed to deploy"
-        fi
-        
-        if [ "${{ needs.deploy-frontend.result }}" = "success" ]; then
-          echo "✅ Frontend: Deployed successfully"
-        else
-          echo "❌ Frontend: Failed to deploy"
-        fi
-
-  # ========================================
-  # 📢 Notification
-  # ========================================
-  notify:
-    name: 📢 Deployment Notification
-    runs-on: ubuntu-latest
-    needs: [smoke-tests]
-    if: always() && (github.ref == 'refs/heads/main' || github.event.inputs.environment != '')
-    
-    steps:
-    - name: 📢 Success Notification
-      if: needs.smoke-tests.result == 'success'
-      env:
-        STAGE: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
-      run: |
-        echo "🎉 SkillSwap deployment successful!"
-        echo "🌐 Frontend: http://skillswap-frontend-${STAGE}.s3-website-eu-north-1.amazonaws.com"
-        echo "🔗 Backend API: https://jm11mtpkb9.execute-api.eu-north-1.amazonaws.com/prod"
-        echo "🚀 Environment: ${{ github.event.inputs.environment || 'prod' }}"
-        
-    - name: 📢 Failure Notification
-      if: needs.smoke-tests.result == 'failure'
-      run: |
-        echo "❌ SkillSwap deployment failed!"
-        echo "🔍 Check the logs above for details"
-        exit 1 
+        fi 
