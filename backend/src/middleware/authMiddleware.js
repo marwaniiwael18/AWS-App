@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const AWS = require('aws-sdk');
+// Legacy auth middleware - use auth-v3.js for new development
 
 // Configure AWS Cognito
 const cognito = new AWS.CognitoIdentityServiceProvider({

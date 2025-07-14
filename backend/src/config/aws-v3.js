@@ -66,7 +66,7 @@ const TABLES = {
 };
 
 // =================================
-// 👤 Cognito Configuration
+// Cognito Configuration
 // =================================
 
 const COGNITO_CONFIG = {

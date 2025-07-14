@@ -1,12 +1,13 @@
-const AWS = require('aws-sdk');
+// Legacy AWS config - use aws-v3.js for new development
+// const AWS = require('aws-sdk');
 require('dotenv').config();
 
 // Configure AWS SDK
-AWS.config.update({
-  region: process.env.AWS_REGION || 'us-east-1',
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-});
+// AWS.config.update({
+//   region: process.env.AWS_REGION || 'us-east-1',
+//   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+//   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+// });
 
 // DynamoDB Configuration
 const dynamoDb = new AWS.DynamoDB.DocumentClient({

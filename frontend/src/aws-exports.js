@@ -1,6 +1,12 @@
 // AWS Configuration for SkillSwap
 // Updated with NEW simple User Pool credentials
 
+// Determine environment-specific configuration
+const isProd = import.meta.env.PROD;
+const baseUrl = isProd 
+  ? 'https://skillswap.aws-deploy.com' 
+  : 'http://localhost:5173';
+
 const awsconfig = {
   // AWS Region
   aws_project_region: 'eu-north-1',
@@ -25,12 +31,12 @@ const awsconfig = {
   },
   aws_cognito_verification_mechanisms: ['email'],
   
-  // OAuth Configuration
+  // OAuth Configuration - Environment-aware URLs
   oauth: {
     domain: 'skillswap-simple.auth.eu-north-1.amazoncognito.com',
     scope: ['openid', 'email', 'profile'],
-    redirectSignIn: 'http://localhost:5173/',
-    redirectSignOut: 'http://localhost:5173/',
+    redirectSignIn: `${baseUrl}/`,
+    redirectSignOut: `${baseUrl}/`,
     responseType: 'code'
   },
   

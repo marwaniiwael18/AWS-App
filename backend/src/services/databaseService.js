@@ -1,4 +1,4 @@
-const AWS = require('aws-sdk');
+// Legacy database service - use userService-v3.js for new development
 const { MongoClient } = require('mongodb');
 const { Pool } = require('pg');
 

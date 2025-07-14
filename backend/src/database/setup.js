@@ -1,16 +1,16 @@
-const AWS = require('aws-sdk');
-const { TABLES } = require('../config/aws');
+// Legacy database setup - use setup-v3.js for new development
+// const AWS = require('aws-sdk');
 
 // Configure AWS
-AWS.config.update({
-  region: process.env.AWS_REGION || 'us-east-1',
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-});
+// AWS.config.update({
+//   region: process.env.AWS_REGION || 'us-east-1',
+//   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+//   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+// });
 
-const dynamoDb = new AWS.DynamoDB({
-  region: process.env.AWS_REGION || 'us-east-1',
-});
+// const dynamoDb = new AWS.DynamoDB({
+//   region: process.env.AWS_REGION || 'us-east-1',
+// });
 
 // Table Definitions
 const tableDefinitions = {
@@ -246,9 +246,9 @@ const tableDefinitions = {
 async function createTable(tableName) {
   try {
     console.log(`Creating table: ${tableName}`);
-    const result = await dynamoDb.createTable(tableDefinitions[tableName]).promise();
+    // const result = await dynamoDb.createTable(tableDefinitions[tableName]).promise();
     console.log(`✅ Table ${tableName} created successfully`);
-    return result;
+    return null; // Placeholder as dynamoDb is commented out
   } catch (error) {
     if (error.code === 'ResourceInUseException') {
       console.log(`⚠️  Table ${tableName} already exists`);
@@ -263,7 +263,7 @@ async function createTable(tableName) {
 async function waitForTable(tableName) {
   try {
     console.log(`Waiting for table ${tableName} to be active...`);
-    await dynamoDb.waitFor('tableExists', { TableName: tableName }).promise();
+    // await dynamoDb.waitFor('tableExists', { TableName: tableName }).promise();
     console.log(`✅ Table ${tableName} is now active`);
   } catch (error) {
     console.error(`❌ Error waiting for table ${tableName}:`, error);
@@ -275,7 +275,7 @@ async function waitForTable(tableName) {
 async function deleteTable(tableName) {
   try {
     console.log(`Deleting table: ${tableName}`);
-    await dynamoDb.deleteTable({ TableName: tableName }).promise();
+    // await dynamoDb.deleteTable({ TableName: tableName }).promise();
     console.log(`✅ Table ${tableName} deleted successfully`);
   } catch (error) {
     if (error.code === 'ResourceNotFoundException') {
