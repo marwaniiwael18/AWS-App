@@ -13,7 +13,10 @@
     "cleanup-db": "node src/database/setup.js cleanup",
     "setup-db-v3": "node -e \"require('./src/database/setup-v3').setupTables()\"",
     "migrate-to-dynamodb": "node scripts/migrate-to-dynamodb.js",
-    "verify-migration": "node scripts/migrate-to-dynamodb.js --verify"
+    "verify-migration": "node scripts/migrate-to-dynamodb.js --verify",
+    "setup-s3": "node scripts/setup-s3.js",
+    "verify-s3": "node scripts/setup-s3.js --verify",
+    "s3-demo-config": "node scripts/setup-s3.js --demo-config"
   },
   "keywords": [
     "aws",
@@ -30,6 +33,7 @@
     "@aws-sdk/client-dynamodb": "^3.844.0",
     "@aws-sdk/client-s3": "^3.844.0",
     "@aws-sdk/lib-dynamodb": "^3.844.0",
+    "@aws-sdk/s3-request-presigner": "^3.844.0",
     "aws-sdk": "^2.1692.0",
     "bcryptjs": "^2.4.3",
     "compression": "^1.7.4",
