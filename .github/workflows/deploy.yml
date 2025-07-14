@@ -116,7 +116,7 @@ jobs:
     - name: 🏗️ Build Frontend
       working-directory: ${{ env.FRONTEND_DIR }}
       env:
-        VITE_API_URL: ${{ secrets.VITE_API_URL || 'http://localhost:3000' }}
+        VITE_API_URL: https://jm11mtpkb9.execute-api.eu-north-1.amazonaws.com/prod
         VITE_BYPASS_AUTH: false
       run: |
         npm run build
@@ -229,28 +229,30 @@ jobs:
         name: frontend-build
         path: ${{ env.FRONTEND_DIR }}/dist/
         
-    - name: 🌐 Deploy to AWS Amplify
+    - name: 🏗️ Rebuild Frontend for Production
       working-directory: ${{ env.FRONTEND_DIR }}
       env:
-        VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        VITE_API_URL: https://jm11mtpkb9.execute-api.eu-north-1.amazonaws.com/prod
         VITE_BYPASS_AUTH: false
-        AMPLIFY_APP_ID: ${{ secrets.AMPLIFY_APP_ID }}
       run: |
-        # Install Amplify CLI
-        npm install -g @aws-amplify/cli
+        echo "🏗️ Rebuilding frontend with production API URL..."
+        npm run build
+        echo "✅ Frontend rebuilt for production"
         
-        # Deploy using Amplify CLI or S3 + CloudFront
-        echo "🌐 Deploying frontend to Amplify..."
+    - name: 🌐 Deploy to S3
+      working-directory: ${{ env.FRONTEND_DIR }}
+      env:
+        STAGE: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
+      run: |
+        echo "📦 Deploying frontend to S3..."
+        echo "📁 Contents of dist directory:"
+        ls -la dist/
         
-        # Alternative: Deploy to S3 if Amplify CLI not configured
-        if [ -z "$AMPLIFY_APP_ID" ]; then
-          echo "📦 Deploying to S3..."
-          aws s3 sync dist/ s3://skillswap-frontend-${{ github.event.inputs.environment || 'prod' }}/ --delete
-          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*" || true
-        else
-          echo "🚀 Deploying via Amplify..."
-          amplify publish --yes
-        fi
+        # Deploy to S3 bucket
+        aws s3 sync dist/ s3://skillswap-frontend-${STAGE}/ --delete --region eu-north-1
+        
+        echo "✅ Frontend deployed to S3"
+        echo "🌐 Frontend URL: http://skillswap-frontend-${STAGE}.s3-website-eu-north-1.amazonaws.com"
 
   # ========================================
   # 🧪 Post-Deployment Tests
