@@ -148,7 +148,8 @@ class UserController {
       await fs.writeFile(filePath, req.file.buffer);
 
       // Generate URL for the file
-      const profilePhotoUrl = `/uploads/profiles/${fileName}`;
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const profilePhotoUrl = `${baseUrl}/uploads/profiles/${fileName}`;
 
       // Update user profile with photo URL
       const updatedUser = await userService.updateUser(userId, {
@@ -190,7 +191,17 @@ class UserController {
       
       if (user?.profilePhoto) {
         // Delete file from filesystem
-        const filePath = path.join(process.cwd(), user.profilePhoto);
+        // Extract the file path from the full URL
+        let filePath;
+        if (user.profilePhoto.startsWith('http')) {
+          // Extract path from full URL: http://localhost:3000/uploads/profiles/filename.ext -> uploads/profiles/filename.ext
+          const urlPath = user.profilePhoto.split('/').slice(3).join('/');
+          filePath = path.join(process.cwd(), urlPath);
+        } else {
+          // Handle relative paths
+          filePath = path.join(process.cwd(), user.profilePhoto);
+        }
+        
         try {
           await fs.unlink(filePath);
         } catch (fileError) {

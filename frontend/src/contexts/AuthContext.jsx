@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
-import { getCurrentUser, signIn, signUp, signOut as amplifySignOut, confirmSignUp, resendSignUpCode } from 'aws-amplify/auth';
+import { getCurrentUser, signIn, signUp, signOut as amplifySignOut, confirmSignUp, resendSignUpCode, fetchAuthSession } from 'aws-amplify/auth';
+import { setAuthToken, removeAuthToken } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -18,11 +19,44 @@ export const AuthProvider = ({ children }) => {
   const checkAuthState = useCallback(async () => {
     try {
       setLoading(true);
+      
+      // Development bypass mode
+      if (import.meta.env.DEV && import.meta.env.VITE_BYPASS_AUTH === 'true') {
+        const mockUser = {
+          userId: 'dev-user-123',
+          username: 'devuser',
+          attributes: {
+            email: 'dev@example.com',
+            name: 'Development User',
+            email_verified: 'true'
+          }
+        };
+        setUser(mockUser);
+        setAuthToken('dev-mock-token');
+        console.log('Development bypass mode: Mock user authenticated');
+        return;
+      }
+      
       const currentUser = await getCurrentUser();
+      
+      // Get the auth session to extract the JWT token
+      const session = await fetchAuthSession();
+      const accessToken = session.tokens?.accessToken?.toString();
+      
+      if (accessToken) {
+        // Store the token for API calls
+        setAuthToken(accessToken);
+        console.log('Auth token stored successfully');
+      } else {
+        console.warn('No access token found in session');
+        removeAuthToken();
+      }
+      
       setUser(currentUser);
     } catch (error) {
       console.log('No authenticated user:', error);
       setUser(null);
+      removeAuthToken();
     } finally {
       setLoading(false);
     }
@@ -137,6 +171,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await amplifySignOut();
       setUser(null);
+      removeAuthToken();
     } catch (error) {
       console.error('Sign out error:', error);
       throw error;

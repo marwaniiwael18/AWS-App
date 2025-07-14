@@ -1,0 +1,25 @@
+{
+  "dev-user-123": {
+    "userId": "dev-user-123",
+    "email": "dev@example.com",
+    "name": "Marwani Wael",
+    "bio": "This is a development user for testing purposes.",
+    "location": "Development City",
+    "profilePhoto": "http://localhost:3000/uploads/profiles/dev-user-123_1752491181806.jpeg",
+    "skillsOffered": [
+      "JavaScript",
+      "React",
+      "Node.js"
+    ],
+    "skillsWanted": [
+      "Python",
+      "Machine Learning",
+      "Data Science"
+    ],
+    "rating": 4.8,
+    "totalRatings": 25,
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2025-07-14T11:06:21.807Z"
+  }
+}

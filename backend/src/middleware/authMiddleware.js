@@ -11,6 +11,19 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 
 // Middleware to verify JWT tokens
 const authenticate = async (req, res, next) => {
+  // For development mode, allow bypass authentication
+  if (process.env.NODE_ENV === 'development' && process.env.BYPASS_AUTH === 'true') {
+    // Mock user for development
+    req.user = {
+      userId: 'dev-user-123',
+      email: 'dev@example.com',
+      name: 'Development User',
+      id: 'dev-user-123',
+      verified: true
+    };
+    return next();
+  }
+
   let token;
 
   // Check for token in Authorization header
@@ -127,6 +140,19 @@ const requireOwnership = (userIdField = 'userId') => {
 
 // Optional authentication (doesn't fail if no token)
 const optionalAuth = async (req, res, next) => {
+  // For development mode, allow bypass authentication
+  if (process.env.NODE_ENV === 'development' && process.env.BYPASS_AUTH === 'true') {
+    // Mock user for development
+    req.user = {
+      userId: 'dev-user-123',
+      email: 'dev@example.com',
+      name: 'Development User',
+      id: 'dev-user-123',
+      verified: true
+    };
+    return next();
+  }
+
   let token;
 
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {

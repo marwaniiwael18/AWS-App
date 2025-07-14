@@ -19,7 +19,13 @@
     "amplify:publish": "amplify publish",
     "deploy": "amplify publish"
   },
-  "keywords": ["aws", "amplify", "react", "nodejs", "skillswap"],
+  "keywords": [
+    "aws",
+    "amplify",
+    "react",
+    "nodejs",
+    "skillswap"
+  ],
   "author": "Your Name",
   "license": "MIT",
   "devDependencies": {
@@ -28,4 +34,4 @@
   "dependencies": {
     "@aws-amplify/cli": "^12.8.2"
   }
-} 
+}

@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import AuthModal from '../components/AuthModal';
 
 const Home = () => {
   const { user } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   return (
     <div className="min-h-screen">
@@ -28,9 +30,12 @@ const Home = () => {
                 </Link>
               ) : (
                 <>
-                  <Link to="/login" className="btn-primary">
+                  <button 
+                    onClick={() => setShowAuthModal(true)}
+                    className="btn-primary"
+                  >
                     Get Started
-                  </Link>
+                  </button>
                   <Link to="/about" className="btn-secondary">
                     Learn More
                   </Link>
@@ -42,8 +47,7 @@ const Home = () => {
         
         {/* Floating Elements */}
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float"></div>
-        <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-secondary-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float animation-delay-400"></div>
-        <div className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-accent-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float animation-delay-800"></div>
+        <div className="absolute top-3/4 right-1/4 w-64 h-64 bg-secondary-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float animation-delay-1000"></div>
       </section>
 
       {/* Features Section */}
@@ -53,25 +57,19 @@ const Home = () => {
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gradient">
               Why Choose SkillSwap?
             </h2>
-            <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-              Discover the power of collaborative learning and skill exchange
+            <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
+              Join a community where knowledge flows freely and everyone has something valuable to share.
             </p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <div
-                key={index}
-                className="card floating-element animate-slide-up"
-                style={{ animationDelay: `${index * 200}ms` }}
-              >
-                <div className="text-center">
-                  <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6 ${feature.iconBg}`}>
-                    <feature.icon className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-3 text-neutral-800">{feature.title}</h3>
-                  <p className="text-neutral-600 leading-relaxed">{feature.description}</p>
+              <div key={index} className="text-center p-8 rounded-2xl bg-gradient-to-br from-neutral-50 to-white border border-neutral-200 hover:shadow-soft transition-all duration-300 animate-slide-up" style={{ animationDelay: `${index * 100}ms` }}>
+                <div className="w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-glow-primary">
+                  <feature.icon className="w-8 h-8 text-white" />
                 </div>
+                <h3 className="text-xl font-semibold mb-4 text-neutral-900">{feature.title}</h3>
+                <p className="text-neutral-600">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -79,30 +77,25 @@ const Home = () => {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 bg-gradient-to-br from-neutral-50 to-primary-50">
+      <section className="py-20 bg-gradient-to-br from-neutral-50 to-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gradient-secondary">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gradient">
               How It Works
             </h2>
-            <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-              Simple steps to start your skill-sharing journey
+            <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
+              Get started in minutes and begin your skill-sharing journey today.
             </p>
           </div>
           
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-3 gap-8">
             {steps.map((step, index) => (
-              <div key={index} className="text-center animate-slide-up" style={{ animationDelay: `${index * 150}ms` }}>
-                <div className="relative mb-6">
-                  <div className="w-16 h-16 bg-gradient-primary rounded-full flex items-center justify-center mx-auto shadow-glow-primary">
-                    <span className="text-white font-bold text-lg">{index + 1}</span>
-                  </div>
-                  {index < steps.length - 1 && (
-                    <div className="hidden md:block absolute top-8 left-full w-full h-0.5 bg-gradient-to-r from-primary-300 to-secondary-300 transform -translate-x-1/2"></div>
-                  )}
+              <div key={index} className="text-center animate-slide-up" style={{ animationDelay: `${index * 100}ms` }}>
+                <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-6 text-white font-bold text-xl shadow-glow-primary">
+                  {index + 1}
                 </div>
-                <h3 className="text-lg font-semibold mb-2 text-neutral-800">{step.title}</h3>
-                <p className="text-neutral-600 text-sm">{step.description}</p>
+                <h3 className="text-xl font-semibold mb-4 text-neutral-900">{step.title}</h3>
+                <p className="text-neutral-600">{step.description}</p>
               </div>
             ))}
           </div>
@@ -134,12 +127,21 @@ const Home = () => {
             Join thousands of learners and experts who are already sharing skills and building connections.
           </p>
           {!user && (
-            <Link to="/login" className="btn-secondary">
+            <button 
+              onClick={() => setShowAuthModal(true)}
+              className="btn-secondary"
+            >
               Join SkillSwap Today
-            </Link>
+            </button>
           )}
         </div>
       </section>
+
+      {/* Auth Modal */}
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
+      />
     </div>
   );
 };

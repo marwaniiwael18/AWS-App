@@ -33,7 +33,8 @@ api.interceptors.response.use(
       // Token expired or invalid
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Redirect to home page instead of /login since we use modal authentication
+      window.location.href = '/';
     }
     return Promise.reject(error);
   }
@@ -291,7 +292,11 @@ export const handleApiError = (error) => {
 
 // Auth token utilities
 export const setAuthToken = (token) => {
-  localStorage.setItem('authToken', token);
+  if (token) {
+    localStorage.setItem('authToken', token);
+  } else {
+    localStorage.removeItem('authToken');
+  }
 };
 
 export const removeAuthToken = () => {
