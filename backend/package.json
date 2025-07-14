@@ -10,7 +10,10 @@
     "build": "echo 'No build step needed for Node.js'",
     "lint": "eslint .",
     "setup-db": "node src/database/setup.js setup",
-    "cleanup-db": "node src/database/setup.js cleanup"
+    "cleanup-db": "node src/database/setup.js cleanup",
+    "setup-db-v3": "node -e \"require('./src/database/setup-v3').setupTables()\"",
+    "migrate-to-dynamodb": "node scripts/migrate-to-dynamodb.js",
+    "verify-migration": "node scripts/migrate-to-dynamodb.js --verify"
   },
   "keywords": [
     "aws",
@@ -23,6 +26,10 @@
   "author": "Your Name",
   "license": "MIT",
   "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.844.0",
+    "@aws-sdk/client-dynamodb": "^3.844.0",
+    "@aws-sdk/client-s3": "^3.844.0",
+    "@aws-sdk/lib-dynamodb": "^3.844.0",
     "aws-sdk": "^2.1692.0",
     "bcryptjs": "^2.4.3",
     "compression": "^1.7.4",
