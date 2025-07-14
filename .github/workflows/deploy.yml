@@ -297,13 +297,19 @@ jobs:
     name: 🧪 Smoke Tests
     runs-on: ubuntu-latest
     needs: [deploy-backend, deploy-frontend]
-    if: github.ref == 'refs/heads/main' || github.event.inputs.environment != ''
+    if: always() && (github.ref == 'refs/heads/main' || github.event.inputs.environment != '')
     
     steps:
     - name: 📥 Checkout Code
       uses: actions/checkout@v4
       
+    - name: 🔍 Check Job Results
+      run: |
+        echo "Backend deployment result: ${{ needs.deploy-backend.result }}"
+        echo "Frontend deployment result: ${{ needs.deploy-frontend.result }}"
+        
     - name: 🧪 Test Backend Health
+      if: needs.deploy-backend.result == 'success'
       run: |
         API_URL="https://jm11mtpkb9.execute-api.eu-north-1.amazonaws.com/prod"
         echo "🔍 Testing API health at: $API_URL"
@@ -322,6 +328,7 @@ jobs:
         fi
         
     - name: 🧪 Test Frontend Deployment
+      if: needs.deploy-frontend.result == 'success'
       env:
         STAGE: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
       run: |
@@ -339,6 +346,21 @@ jobs:
         else
           echo "❌ Frontend health check failed with status: $response"
           exit 1
+        fi
+        
+    - name: 📊 Summary
+      run: |
+        echo "=== Deployment Summary ==="
+        if [ "${{ needs.deploy-backend.result }}" = "success" ]; then
+          echo "✅ Backend: Deployed successfully"
+        else
+          echo "❌ Backend: Failed to deploy"
+        fi
+        
+        if [ "${{ needs.deploy-frontend.result }}" = "success" ]; then
+          echo "✅ Frontend: Deployed successfully"
+        else
+          echo "❌ Frontend: Failed to deploy"
         fi
 
   # ========================================
