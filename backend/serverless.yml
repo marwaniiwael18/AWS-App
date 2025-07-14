@@ -1,0 +1,365 @@
+# ========================================
+# 🚀 SkillSwap Serverless Configuration
+# AWS Lambda Deployment with Serverless Framework
+# ========================================
+
+service: skillswap-backend
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ${opt:region, 'eu-north-1'}
+  stage: ${opt:stage, 'dev'}
+  
+  # Environment Variables
+  environment:
+    NODE_ENV: ${self:provider.stage}
+    AWS_REGION: ${self:provider.region}
+    
+    # Cognito Configuration
+    COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID, 'eu-north-1_tr3nTK4VG'}
+    COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID, '5heee4rhh886sa7nl4gqerqa2e'}
+    COGNITO_REGION: ${self:provider.region}
+    BYPASS_AUTH: false  # Always use real Cognito in deployment
+    
+    # Database Configuration
+    DB_TYPE: dynamodb
+    USERS_TABLE: ${self:service}-${self:provider.stage}-users
+    MATCHES_TABLE: ${self:service}-${self:provider.stage}-matches
+    MESSAGES_TABLE: ${self:service}-${self:provider.stage}-messages
+    RATINGS_TABLE: ${self:service}-${self:provider.stage}-ratings
+    
+    # Storage Configuration
+    STORAGE_TYPE: s3
+    S3_BUCKET_NAME: ${self:service}-${self:provider.stage}-files
+    S3_REGION: ${self:provider.region}
+    
+    # Security
+    JWT_SECRET: ${env:JWT_SECRET, 'production-secret-change-this'}
+    CORS_ORIGIN: ${env:FRONTEND_URL, 'https://main.d1234567890.amplifyapp.com'}
+  
+  # IAM Permissions
+  iam:
+    role:
+      statements:
+        # DynamoDB Permissions
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:BatchGetItem
+            - dynamodb:BatchWriteItem
+          Resource:
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:service}-${self:provider.stage}-*"
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:service}-${self:provider.stage}-*/index/*"
+        
+        # S3 Permissions
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:DeleteObject
+            - s3:PutObjectAcl
+          Resource:
+            - "arn:aws:s3:::${self:service}-${self:provider.stage}-files/*"
+        
+        - Effect: Allow
+          Action:
+            - s3:ListBucket
+            - s3:GetBucketLocation
+          Resource:
+            - "arn:aws:s3:::${self:service}-${self:provider.stage}-files"
+        
+        # Cognito Permissions
+        - Effect: Allow
+          Action:
+            - cognito-idp:AdminGetUser
+            - cognito-idp:AdminUpdateUserAttributes
+            - cognito-idp:AdminSetUserPassword
+            - cognito-idp:AdminDeleteUser
+            - cognito-idp:ListUsers
+          Resource:
+            - "arn:aws:cognito-idp:${self:provider.region}:*:userpool/${env:COGNITO_USER_POOL_ID, 'eu-north-1_tr3nTK4VG'}"
+
+# ========================================
+# 🔧 Functions Configuration
+# ========================================
+
+functions:
+  # Main API Function
+  api:
+    handler: lambda.handler
+    timeout: 30
+    memorySize: 512
+    events:
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors:
+            origin: ${env:FRONTEND_URL, 'https://main.d1234567890.amplifyapp.com'}
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+      - http:
+          path: /
+          method: ANY
+          cors:
+            origin: ${env:FRONTEND_URL, 'https://main.d1234567890.amplifyapp.com'}
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+
+# ========================================
+# 📦 Resources (DynamoDB Tables)
+# ========================================
+
+resources:
+  Resources:
+    # Users Table
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-${self:provider.stage}-users
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: email
+            AttributeType: S
+          - AttributeName: location
+            AttributeType: S
+          - AttributeName: createdAt
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: EmailIndex
+            KeySchema:
+              - AttributeName: email
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: LocationCreatedIndex
+            KeySchema:
+              - AttributeName: location
+                KeyType: HASH
+              - AttributeName: createdAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+
+    # Matches Table
+    MatchesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-${self:provider.stage}-matches
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: matchId
+            AttributeType: S
+          - AttributeName: requesterId
+            AttributeType: S
+          - AttributeName: receiverId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: matchId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: RequesterIndex
+            KeySchema:
+              - AttributeName: requesterId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: ReceiverIndex
+            KeySchema:
+              - AttributeName: receiverId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    # Messages Table
+    MessagesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-${self:provider.stage}-messages
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: chatId
+            AttributeType: S
+          - AttributeName: timestamp
+            AttributeType: S
+          - AttributeName: senderId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: chatId
+            KeyType: HASH
+          - AttributeName: timestamp
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: SenderIndex
+            KeySchema:
+              - AttributeName: senderId
+                KeyType: HASH
+              - AttributeName: timestamp
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+
+    # Ratings Table
+    RatingsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-${self:provider.stage}-ratings
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: ratingId
+            AttributeType: S
+          - AttributeName: ratedUserId
+            AttributeType: S
+          - AttributeName: raterUserId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: ratingId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: RatedUserIndex
+            KeySchema:
+              - AttributeName: ratedUserId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: RaterUserIndex
+            KeySchema:
+              - AttributeName: raterUserId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    # S3 Bucket for File Storage
+    FilesBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:service}-${self:provider.stage}-files
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+        CorsConfiguration:
+          CorsRules:
+            - AllowedHeaders:
+                - "*"
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              AllowedOrigins:
+                - ${env:FRONTEND_URL, 'https://main.d1234567890.amplifyapp.com'}
+                - "http://localhost:5173"
+              MaxAge: 3000
+
+    # S3 Bucket Policy for Public Read Access to Profile Photos
+    FilesBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref FilesBucket
+        PolicyDocument:
+          Statement:
+            - Sid: PublicReadGetObject
+              Effect: Allow
+              Principal: "*"
+              Action:
+                - s3:GetObject
+              Resource:
+                - !Sub "${FilesBucket}/profiles/*"
+
+# ========================================
+# 📤 Outputs
+# ========================================
+
+  Outputs:
+    ApiGatewayRestApiId:
+      Value:
+        Ref: ApiGatewayRestApi
+      Export:
+        Name: ${self:service}-${self:provider.stage}-restApiId
+
+    ApiGatewayRestApiRootResourceId:
+      Value:
+        Fn::GetAtt:
+          - ApiGatewayRestApi
+          - RootResourceId
+      Export:
+        Name: ${self:service}-${self:provider.stage}-rootResourceId
+
+    ApiEndpoint:
+      Description: "API Gateway endpoint URL"
+      Value:
+        Fn::Join:
+          - ""
+          - - "https://"
+            - Ref: ApiGatewayRestApi
+            - ".execute-api."
+            - ${self:provider.region}
+            - ".amazonaws.com/"
+            - ${self:provider.stage}
+
+# ========================================
+# 🔌 Plugins
+# ========================================
+
+plugins:
+  - serverless-offline
+  - serverless-dotenv-plugin
+
+# ========================================
+# 📁 Package Configuration
+# ========================================
+
+package:
+  exclude:
+    - .git/**
+    - .vscode/**
+    - node_modules/.cache/**
+    - coverage/**
+    - .nyc_output/**
+    - scripts/**
+    - data/**
+    - uploads/**
+    - "*.md"
+    - .env*
+    - .gitignore
+    - .eslintrc.js
+    - jest.config.js
+
+# ========================================
+# 🏗️ Custom Configuration
+# ========================================
+
+custom:
+  dotenv:
+    path: .env.production
+  serverless-offline:
+    httpPort: 3001
+    lambdaPort: 3002 

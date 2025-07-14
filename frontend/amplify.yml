@@ -1,0 +1,102 @@
+# ========================================
+# 🚀 AWS Amplify Build Configuration
+# SkillSwap Frontend Deployment
+# ========================================
+
+version: 1
+
+# ========================================
+# 🏗️ Build Environment
+# ========================================
+backend:
+  phases:
+    build:
+      commands:
+        - echo "No backend build required for static site"
+
+frontend:
+  phases:
+    # ========================================
+    # 📦 Pre-Build Phase
+    # ========================================
+    preBuild:
+      commands:
+        - echo "📦 Installing frontend dependencies..."
+        - npm ci
+        - echo "🔍 Node.js version:"
+        - node --version
+        - echo "📋 NPM version:"
+        - npm --version
+        - echo "🌍 Environment variables loaded"
+        
+    # ========================================
+    # 🏗️ Build Phase
+    # ========================================
+    build:
+      commands:
+        - echo "🏗️ Building React application..."
+        - echo "Environment: $NODE_ENV"
+        - echo "API URL: $VITE_API_URL"
+        - npm run build
+        - echo "✅ Build completed successfully"
+        
+    # ========================================
+    # 📤 Post-Build Phase
+    # ========================================
+    postBuild:
+      commands:
+        - echo "📤 Post-build optimizations..."
+        - echo "📊 Build statistics:"
+        - du -sh dist/*
+        - echo "📁 Generated files:"
+        - ls -la dist/
+        
+  # ========================================
+  # 📁 Build Artifacts
+  # ========================================
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
+      
+  # ========================================
+  # 💾 Build Cache
+  # ========================================
+  cache:
+    paths:
+      - node_modules/**/*
+      - .vite/**/*
+
+# ========================================
+# 🌐 App Configuration
+# ========================================
+customHeaders:
+  - pattern: '**/*'
+    headers:
+      - key: 'Strict-Transport-Security'
+        value: 'max-age=31536000; includeSubDomains'
+      - key: 'X-Content-Type-Options'
+        value: 'nosniff'
+      - key: 'X-Frame-Options'
+        value: 'DENY'
+      - key: 'X-XSS-Protection'
+        value: '1; mode=block'
+        
+  - pattern: '/static/**'
+    headers:
+      - key: 'Cache-Control'
+        value: 'public, max-age=31536000, immutable'
+        
+  - pattern: '/api/**'
+    headers:
+      - key: 'Cache-Control'
+        value: 'no-cache, no-store, must-revalidate'
+
+# ========================================
+# 🔄 Redirects & Rewrites
+# ========================================
+redirects:
+  - source: '/<*>'
+    target: '/index.html'
+    status: '404-200'
+    condition: null 

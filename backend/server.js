@@ -17,7 +17,7 @@ const skillRoutes = require('./src/routes/skillRoutes');
 
 // Import middleware
 const errorHandler = require('./src/middleware/errorHandler');
-const authMiddleware = require('./src/middleware/authMiddleware');
+const { authMiddleware, optionalAuthMiddleware } = require('./src/middleware/auth-v3');
 
 // Import services
 const socketService = require('./src/services/socketService');

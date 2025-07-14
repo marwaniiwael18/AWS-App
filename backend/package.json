@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "dev:cognito": "BYPASS_AUTH=false nodemon server.js",
+    "dev:bypass": "BYPASS_AUTH=true nodemon server.js",
     "test": "jest",
     "build": "echo 'No build step needed for Node.js'",
     "lint": "eslint .",
@@ -16,7 +18,8 @@
     "verify-migration": "node scripts/migrate-to-dynamodb.js --verify",
     "setup-s3": "node scripts/setup-s3.js",
     "verify-s3": "node scripts/setup-s3.js --verify",
-    "s3-demo-config": "node scripts/setup-s3.js --demo-config"
+    "s3-demo-config": "node scripts/setup-s3.js --demo-config",
+    "test-cognito": "node scripts/test-cognito.js"
   },
   "keywords": [
     "aws",
@@ -34,6 +37,7 @@
     "@aws-sdk/client-s3": "^3.844.0",
     "@aws-sdk/lib-dynamodb": "^3.844.0",
     "@aws-sdk/s3-request-presigner": "^3.844.0",
+    "@codegenie/serverless-express": "^4.17.0",
     "aws-sdk": "^2.1692.0",
     "bcryptjs": "^2.4.3",
     "compression": "^1.7.4",
@@ -58,6 +62,9 @@
     "eslint": "^8.54.0",
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",
+    "serverless": "^3.40.0",
+    "serverless-dotenv-plugin": "^6.0.0",
+    "serverless-offline": "^14.4.0",
     "supertest": "^6.3.3"
   },
   "engines": {
