@@ -48,7 +48,7 @@ const S3_CONFIG = {
 module.exports = {
   // Legacy exports - use aws-v3.js for new development
   // AWS,
-  // dynamoDb,
+  dynamoDb: null, // Fallback for legacy imports
   // cognito,
   // s3,
   TABLES,

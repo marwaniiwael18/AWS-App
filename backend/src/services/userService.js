@@ -1,4 +1,19 @@
-const { dynamoDb, TABLES } = require('../config/aws');
+// Import configuration - gracefully handle AWS import issues
+let dynamoDb, TABLES;
+try {
+  const awsConfig = require('../config/aws');
+  dynamoDb = awsConfig.dynamoDb;
+  TABLES = awsConfig.TABLES;
+} catch (error) {
+  console.log('⚠️  Using file storage - AWS config not available:', error.message);
+  dynamoDb = null;
+  TABLES = {
+    USERS: 'skillswap-users',
+    MATCHES: 'skillswap-matches', 
+    MESSAGES: 'skillswap-messages',
+    RATINGS: 'skillswap-ratings'
+  };
+}
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs').promises;
 const path = require('path');

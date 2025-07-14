@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, param, query } = require('express-validator');
 const userController = require('../controllers/userController');
-const authMiddleware = require('../middleware/auth');
+const { authMiddleware } = require('../middleware/auth-v3');
 
 const router = express.Router();
 
@@ -111,27 +111,27 @@ router.post('/register', validateCreateUser, userController.createUser);
 router.use(authMiddleware);
 
 // User profile routes
-router.get('/me', userController.getCurrentUser);
+router.get('/me', userController.getUserProfile); // Fix: use getUserProfile
 router.get('/:userId', validateUserId, userController.getUserProfile);
 router.put('/:userId', validateUpdateUser, userController.updateUserProfile);
-router.delete('/:userId', validateUserId, userController.deleteUser);
+router.delete('/:userId', validateUserId, userController.deleteUserProfile); // Fix: use deleteUserProfile
 
 // User statistics
 router.get('/:userId/stats', validateUserId, userController.getUserStats);
 
-// Skill management
+// User skills management
 router.post('/:userId/skills', validateSkill, userController.addSkill);
 router.delete('/:userId/skills', validateSkill, userController.removeSkill);
 
-// User matching
-router.get('/:userId/matches', validateUserId, userController.getPotentialMatches);
+// User matching (simplified)
+router.get('/:userId/matches', validateUserId, userController.searchUsers); // Fix: use searchUsers
 
-// User rating
-router.put('/:userId/rating', validateRating, userController.updateUserRating);
+// User rating (simplified) 
+router.put('/:userId/rating', validateRating, userController.rateUser); // Fix: use rateUser
 
-// User search and discovery
-router.get('/', validateSearchQuery, userController.getAllUsers);
-router.get('/search/skills', validateSearchQuery, userController.searchUsersBySkills);
-router.get('/search/location', validateSearchQuery, userController.getUsersByLocation);
+// User search
+router.get('/', validateSearchQuery, userController.searchUsers); // Fix: use searchUsers
+router.get('/search/skills', validateSearchQuery, userController.searchUsers); // Fix: use searchUsers
+router.get('/search/location', validateSearchQuery, userController.searchUsers); // Fix: use searchUsers
 
 module.exports = router; 

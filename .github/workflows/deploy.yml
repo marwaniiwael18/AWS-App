@@ -69,17 +69,11 @@ jobs:
       
     - name: 🧪 Run Backend Tests
       working-directory: ${{ env.BACKEND_DIR }}
-      run: |
-        # Add test command when available
-        # npm test
-        echo "✅ Backend tests passed"
+      run: npm test
         
     - name: 🧪 Run Frontend Tests
       working-directory: ${{ env.FRONTEND_DIR }}
-      run: |
-        # Add test command when available
-        # npm test
-        echo "✅ Frontend tests passed"
+      run: npm test
         
     - name: 🔍 Lint Backend Code
       working-directory: ${{ env.BACKEND_DIR }}
