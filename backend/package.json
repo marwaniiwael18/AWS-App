@@ -51,7 +51,7 @@
     "jwks-rsa": "^3.1.0",
     "mongodb": "^6.17.0",
     "morgan": "^1.10.0",
-    "multer": "^1.4.5-lts.1",
+    "multer": "^2.0.1",
     "pg": "^8.16.3",
     "socket.io": "^4.7.4",
     "socket.io-client": "^4.7.4",
